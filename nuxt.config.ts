@@ -10,7 +10,14 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ],
+    optimizeDeps: {
+      include: ['flowbite']
+    }
   },
 
   modules: ["@pinia/nuxt"],
+  build: {
+    transpile: ['flowbite-vue']
+  },
+
 });
