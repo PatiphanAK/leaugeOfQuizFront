@@ -1,15 +1,40 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useAuthStore } from '~/stores/Auth/useAuthStore';
+import Block from '~/components/Dashboard/Block.vue';
 
 definePageMeta({
-  middleware: ['auth-middleware']
+  middleware: ['auth-middleware'],
+  layout: 'dashboardlayout',
 });
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.userProfile);
 const isLoading = computed(() => authStore.isLoading);
 const imageError = ref(false);
+
+const block_meta = [
+  {
+    title: 'สร้างแบบทดสอบ',
+    description: 'สร้างแบบทดสอบใหม่เพื่อให้ผู้เล่นทำ',
+    link: '/quiz'
+  },
+  {
+    title: 'ดูคะแนนและประวัติ',
+    description: 'ดูคะแนนและประวัติการทำแบบทดสอบ',
+    link: '/history'
+  },
+  {
+    title: 'แก้ไขข้อมูลส่วนตัว',
+    description: 'แก้ไขข้อมูลส่วนตัวและรหัสผ่าน',
+    link: '/profile'
+  },
+  {
+    title: 'กิจกรรมล่าสุด',
+    description: 'กิจกรรมล่าสุดจะแสดงที่นี่',
+    link: '/'
+  }
+];
 
 // ใช้ computed property เพื่อจัดการ URL รูปโปรไฟล์
 const profileImageUrl = computed(() => {
@@ -35,6 +60,7 @@ const profileImageUrl = computed(() => {
 const handleImageError = () => {
   imageError.value = true;
 };
+
 </script>
 
 <template>
@@ -58,18 +84,9 @@ const handleImageError = () => {
           <p class="text-gray-600 dark:text-gray-300">{{ user.email }}</p>
         </div>
       </div>
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-          <h3 class="font-medium mb-2 dark:text-white">สถิติของคุณ</h3>
-          <p class="text-gray-600 dark:text-gray-300">ข้อมูลสถิติจะแสดงที่นี่</p>
-        </div>
-        
-        <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-          <h3 class="font-medium mb-2 dark:text-white">กิจกรรมล่าสุด</h3>
-          <p class="text-gray-600 dark:text-gray-300">กิจกรรมล่าสุดจะแสดงที่นี่</p>
-        </div>
-      </div>
+      <Block
+        :items="block_meta"
+      />
     </div>
     
     <div v-else class="bg-red-50 dark:bg-red-900 p-4 rounded-lg border border-red-200 dark:border-red-700">
