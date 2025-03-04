@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '~/stores/Auth/useAuthStore';
-import { useAuth } from '~/composables/useAuth';
+import { useAuth } from '~/composables/Auth/useAuth';
 import LoginButton from '~/components/Base/LoginButton.vue';
 import ProfileMenu from '~/components/Base/ProfileMenu.vue';
 

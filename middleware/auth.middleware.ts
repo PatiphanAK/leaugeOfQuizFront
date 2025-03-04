@@ -1,8 +1,22 @@
+import { useAuth } from "~/composables/Auth/useAuth";
 import { useAuthStore } from "~/stores/Auth/useAuthStore";
 export default defineNuxtRouteMiddleware(async (to, from) => {
+    // ตรวจสอบว่าเป็นหน้า callback จาก Google หรือไม่
+    if (to.path.includes('/auth/google') || to.path.includes('/callback')) {
+        console.log('Auth middleware: allowing access to auth path:', to.path);
+        // อนุญาตให้เข้าถึงหน้า callback ได้โดยไม่ต้องตรวจสอบการเข้าสู่ระบบ
+        return;
+    }
+    
+    // รายการหน้าที่ไม่ต้องล็อกอิน - เฉพาะ /home, /aboutus, และ /contact
+    const publicRoutes = ['/', '/home', '/aboutus', '/contact'];
+    if (publicRoutes.includes(to.path)) {
+        console.log('Auth middleware: allowing access to public route:', to.path);
+        return;
+    }
+    
     const authStore = useAuthStore();
-    const { getCurrentUser } = useAuth();
-    const router = useRouter();
+    const { getCurrentUser, loginWithGoogle } = useAuth();
     
     // ถ้ากำลังโหลดข้อมูล ให้รอจนเสร็จ
     if (authStore.isLoading) {
@@ -13,21 +27,36 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
             resolve(true);
           }
         });
+        
+        // เพิ่ม timeout เพื่อป้องกันการรอไม่มีที่สิ้นสุด
+        setTimeout(() => {
+          unwatch();
+          resolve(false);
+        }, 5000);
       });
     }
     
     // ถ้ายังไม่ได้ตรวจสอบผู้ใช้ ให้ตรวจสอบ
     if (!authStore.isAuthenticated && !authStore.isLoading) {
-      const user = await getCurrentUser();
-      if (user) {
-        authStore.setUser(user);
+      try {
+        console.log('Trying to get current user');
+        const user = await getCurrentUser();
+        console.log('Current user result:', user);
+        
+        if (user) {
+          authStore.setUser(user);
+          // รอให้ state อัปเดต
+          await nextTick();
+        }
+      } catch (error) {
+        console.error('Error getting current user:', error);
       }
     }
     
-    // ถ้าไม่ได้เข้าสู่ระบบ ให้ redirect ไปหน้า login
     if (!authStore.isAuthenticated) {
-      // บันทึกหน้าที่ต้องการเข้าถึง เพื่อให้สามารถกลับมาหลังจาก login สำเร็จ
-      sessionStorage.setItem('auth_redirect', to.fullPath);
-      return navigateTo('/');
+      loginWithGoogle();
+      return;
     }
+    
+    console.log('User authenticated, allowing access to:', to.path);
 });

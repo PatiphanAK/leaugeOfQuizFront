@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useAuthStore } from '~/stores/Auth/useAuthStore';
 import Block from '~/components/Dashboard/Block.vue';
 
@@ -12,12 +13,12 @@ const authStore = useAuthStore();
 const user = computed(() => authStore.userProfile);
 const isLoading = computed(() => authStore.isLoading);
 const imageError = ref(false);
-
+const currentRoute = useRoute();
 const block_meta = [
   {
     title: 'สร้างแบบทดสอบ',
     description: 'สร้างแบบทดสอบใหม่เพื่อให้ผู้เล่นทำ',
-    link: '/quiz'
+    link: `/quizzes`
   },
   {
     title: 'ดูคะแนนและประวัติ',
@@ -35,6 +36,13 @@ const block_meta = [
     link: '/'
   }
 ];
+
+const updatedBlockMeta = computed(() => {
+  return block_meta.map(item => ({
+    ...item,
+    link: `${currentRoute.path}${item.link}`
+  }));
+});
 
 // ใช้ computed property เพื่อจัดการ URL รูปโปรไฟล์
 const profileImageUrl = computed(() => {
@@ -85,7 +93,7 @@ const handleImageError = () => {
         </div>
       </div>
       <Block
-        :items="block_meta"
+        :items="updatedBlockMeta"
       />
     </div>
     

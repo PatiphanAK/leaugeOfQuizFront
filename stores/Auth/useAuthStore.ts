@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { authAPI } from '~/api/auth.api';
+import { authAPI } from '~/api/Auth/auth.api';
 import type { User } from '~/types/Auth/auth.interface';
 
 interface AuthState {
