@@ -1,6 +1,10 @@
 import { useAuth } from "~/composables/Auth/useAuth";
 import { useAuthStore } from "~/stores/Auth/useAuthStore";
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
+    // ใช้พารามิเตอร์ to และ from ที่ส่งมาแทนการเรียกใช้ useRoute
+    console.log('Auth middleware processing route:', to.path);
+    
     // ตรวจสอบว่าเป็นหน้า callback จาก Google หรือไม่
     if (to.path.includes('/auth/google') || to.path.includes('/callback')) {
         console.log('Auth middleware: allowing access to auth path:', to.path);
@@ -8,7 +12,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         return;
     }
     
-    // รายการหน้าที่ไม่ต้องล็อกอิน - เฉพาะ /home, /aboutus, และ /contact
+    // รายการหน้าที่ไม่ต้องล็อกอิน
     const publicRoutes = ['/', '/home', '/aboutus', '/contact'];
     if (publicRoutes.includes(to.path)) {
         console.log('Auth middleware: allowing access to public route:', to.path);
@@ -36,27 +40,42 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       });
     }
     
-    // ถ้ายังไม่ได้ตรวจสอบผู้ใช้ ให้ตรวจสอบ
-    if (!authStore.isAuthenticated && !authStore.isLoading) {
-      try {
-        console.log('Trying to get current user');
+    try {
+      // ถ้ายังไม่ได้ตรวจสอบผู้ใช้ ให้ตรวจสอบก่อน
+      if (!authStore.isAuthenticated && !authStore.isLoading) {
+        console.log('Checking current user status...');
         const user = await getCurrentUser();
-        console.log('Current user result:', user);
-        
         if (user) {
+          console.log('User found, setting authenticated state');
           authStore.setUser(user);
           // รอให้ state อัปเดต
           await nextTick();
+        } else {
+          console.log('No user found');
         }
-      } catch (error) {
-        console.error('Error getting current user:', error);
       }
-    }
-    
-    if (!authStore.isAuthenticated) {
-      loginWithGoogle();
+      
+      // ตรวจสอบอีกครั้งหลังจากพยายามดึงข้อมูลผู้ใช้
+      if (!authStore.isAuthenticated) {
+        console.log('Authentication required, redirecting to login');
+        // เก็บ URL ที่ผู้ใช้พยายามเข้าถึงเพื่อ redirect กลับหลังจากล็อกอินสำเร็จ
+        if (process.client) {
+          localStorage.setItem('authRedirect', to.fullPath);
+        }
+        // เรียกฟังก์ชัน login ก่อนที่จะ redirect
+        loginWithGoogle();
+        // ใน Nuxt middleware ต้อง return navigateTo โดยตรง
+        return navigateTo('/auth/google');
+      }
+      
+      console.log('User authenticated, allowing access to:', to.path);
       return;
+    } catch (error) {
+      console.error('Authentication error:', error);
+      // กรณีเกิดข้อผิดพลาด ให้ redirect ไปหน้าล็อกอิน
+      if (process.client) {
+        localStorage.setItem('authRedirect', to.fullPath);
+      }
+      return navigateTo('/auth/google');
     }
-    
-    console.log('User authenticated, allowing access to:', to.path);
 });
