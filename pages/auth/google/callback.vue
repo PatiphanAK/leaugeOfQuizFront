@@ -29,7 +29,7 @@ onMounted(async () => {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // ดึงข้อมูลผู้ใช้จากเซิร์ฟเวอร์
-    const response = await $fetch('/api/me', {
+    const response = await $fetch('auth/api/me', {
       baseURL: 'http://localhost:3000',
       credentials: 'include',
     });

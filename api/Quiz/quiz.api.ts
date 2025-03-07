@@ -1,4 +1,5 @@
 import type { Quiz } from "~/types/Quiz/quiz.interface";
+import { objectToFormData } from "@/utils/formData"
 import axios from 'axios';
 
 export interface QuizParams {
@@ -25,7 +26,7 @@ export default function QuizAPI() {
     baseURL: BASE_URL,
     headers: {
       'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      withCredentials: true
     }
   });
 
@@ -110,7 +111,14 @@ export default function QuizAPI() {
     // Create a new quiz
     createQuiz: async (quizData: Partial<Quiz>): Promise<Quiz | null> => {
       try {
-        const response = await api.post('/api/quiz', quizData);
+        const formData = objectToFormData(quizData);
+        const response = await api.post('/api/quiz', formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
         return response.data.quiz || null;
       } catch (error) {
         console.error('Failed to create quiz:', error);
@@ -121,7 +129,13 @@ export default function QuizAPI() {
     // Update an existing quiz
     updateQuiz: async (id: number, quizData: Partial<Quiz>): Promise<Quiz | null> => {
       try {
-        const response = await api.put(`/api/quiz/${id}`, quizData);
+        const response = await api.put(`/api/quiz/${id}`, quizData
+          , {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            }
+          }
+        );
         return response.data.quiz || null;
       } catch (error) {
         console.error('Failed to update quiz:', error);
