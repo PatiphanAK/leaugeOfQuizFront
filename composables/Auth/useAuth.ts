@@ -7,7 +7,7 @@ export function useAuth() {
     // ดึงข้อมูลผู้ใช้ปัจจุบัน
     async function getCurrentUser() {
         try {
-          const response: { user?: any } = await $fetch('auth/api/me', {
+          const response: { user?: any } = await $fetch('api/v1/auth/me', {
             baseURL: API_BASE_URL,
             credentials: 'include', // สำคัญมาก!
           });
@@ -55,7 +55,7 @@ export function useAuth() {
     
     return {
       loginWithGoogle,
-      getCurrentUser,
       logout,
+      getCurrentUser,
     };
   }

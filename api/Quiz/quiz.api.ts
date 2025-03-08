@@ -24,9 +24,9 @@ const BASE_URL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'
 export default function QuizAPI() {
   const api = axios.create({
     baseURL: BASE_URL,
+    withCredentials: true,
     headers: {
       'Accept': 'application/json',
-      withCredentials: true
     }
   });
 

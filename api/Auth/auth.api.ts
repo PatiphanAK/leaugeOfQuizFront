@@ -17,7 +17,7 @@ export const authAPI = {
    */
   async getCurrentUser(): Promise<User | null> {
     try {
-      const { data } = await useFetch<{ user: User }>(`${BASE_URL}/auth/api/me`, {
+      const { data } = await useFetch<{ user: User }>(`${BASE_URL}/api/v1/auth/me`, {
         credentials: 'include', // ส่ง cookies ไปด้วย
         headers: {
           'Accept': 'application/json',

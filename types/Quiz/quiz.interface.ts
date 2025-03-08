@@ -19,3 +19,10 @@ export interface Choice {
     answer: string;
     isCorrect: boolean;
 }
+
+export interface Answer {
+    id: number;
+    answer: string;
+    isCorrect: boolean;
+    image: string;
+}

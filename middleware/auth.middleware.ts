@@ -1,6 +1,8 @@
 import { useAuth } from "~/composables/Auth/useAuth";
 import { useAuthStore } from "~/stores/Auth/useAuthStore";
 
+const auth = useAuth();
+
 export default defineNuxtRouteMiddleware(async (to, from) => {
     // ใช้พารามิเตอร์ to และ from ที่ส่งมาแทนการเรียกใช้ useRoute
     console.log('Auth middleware processing route:', to.path);
@@ -20,7 +22,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     }
     
     const authStore = useAuthStore();
-    const { getCurrentUser, loginWithGoogle } = useAuth();
+    const { loginWithGoogle } = useAuth();
     
     // ถ้ากำลังโหลดข้อมูล ให้รอจนเสร็จ
     if (authStore.isLoading) {
@@ -44,7 +46,7 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       // ถ้ายังไม่ได้ตรวจสอบผู้ใช้ ให้ตรวจสอบก่อน
       if (!authStore.isAuthenticated && !authStore.isLoading) {
         console.log('Checking current user status...');
-        const user = await getCurrentUser();
+        const user = await auth.getCurrentUser();
         if (user) {
           console.log('User found, setting authenticated state');
           authStore.setUser(user);
