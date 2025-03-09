@@ -1,9 +1,12 @@
 export interface Quiz {
     id: number;
     title: string;
-    image: string;
+    imageURL: string;
     description: string;
     questions: Question[];
+    timeLimit: number;
+    isPublished: boolean;
+    categories: string[];
 }
 
 export interface Question {

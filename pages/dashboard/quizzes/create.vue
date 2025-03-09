@@ -1,5 +1,5 @@
-<script lang="ts" setup>
+<script lang="ts">
 </script>
 <template>
-    
+   <FormQuiz/>
 </template>
