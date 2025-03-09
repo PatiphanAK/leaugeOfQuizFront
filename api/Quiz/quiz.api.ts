@@ -68,7 +68,7 @@ export default function QuizAPI() {
     fetchQuizAll: async (params?: QuizParams): Promise<PaginationResult<Quiz>> => {
       try {
         const queryParams = params ? buildQueryParams(params) : {};
-        const response = await api.get('/api/quiz', { params: queryParams });
+        const response = await api.get('/api/v1/quiz', { params: queryParams });
         
         // ปรับรูปแบบการส่งคืนข้อมูลให้เป็น PaginationResult
         const result = response.data || { 
@@ -100,7 +100,7 @@ export default function QuizAPI() {
     // Fetch quiz by ID
     fetchQuizById: async (id: number): Promise<Quiz | null> => {
       try {
-        const response = await api.get(`/api/quiz/${id}`);
+        const response = await api.get(`/api/v1/quiz${id}`);
         return response.data.quiz || null;
       } catch (error) {
         console.error('Failed to get quiz:', error);
@@ -112,7 +112,7 @@ export default function QuizAPI() {
     createQuiz: async (quizData: Partial<Quiz>): Promise<Quiz | null> => {
       try {
         const formData = objectToFormData(quizData);
-        const response = await api.post('/api/quiz', formData,
+        const response = await api.post('/api/v1/quiz', formData,
           {
             headers: {
               'Content-Type': 'multipart/form-data'
@@ -129,7 +129,7 @@ export default function QuizAPI() {
     // Update an existing quiz
     updateQuiz: async (id: number, quizData: Partial<Quiz>): Promise<Quiz | null> => {
       try {
-        const response = await api.put(`/api/quiz/${id}`, quizData
+        const response = await api.put(`/api/v1/quiz${id}`, quizData
           , {
             headers: {
               'Content-Type': 'multipart/form-data',
@@ -146,7 +146,7 @@ export default function QuizAPI() {
     // Delete a quiz
     deleteQuiz: async (id: number): Promise<boolean> => {
       try {
-        await api.delete(`/api/quiz/${id}`);
+        await api.delete(`/api/v1/quiz/${id}`);
         return true;
       } catch (error) {
         console.error('Failed to delete quiz:', error);
@@ -157,7 +157,7 @@ export default function QuizAPI() {
     // ดึงหมวดหมู่ทั้งหมดของควิซ
     fetchQuizCategories: async (): Promise<{ id: number, name: string }[]> => {
       try {
-        const response = await api.get('/api/quiz/categories');
+        const response = await api.get('/api/v1/quiz/categories');
         return response.data?.categories || [];
       } catch (error) {
         console.error('Failed to fetch quiz categories:', error);
