@@ -1,22 +1,20 @@
-import type { Quiz } from "~/types/Quiz/quiz.interface";
+import type { Quiz, Question, Choice } from "~/types/Quiz/quiz.interface";
 import { objectToFormData } from "@/utils/formData"
 import axios from 'axios';
 
 export interface QuizParams {
-  search?: string;
-  categories?: number[] | string[];
+  page?: number;
   limit?: number;
-  offset?: number;
-  sort?: string;
-  order?: 'asc' | 'desc';
+  published?: boolean;
 }
 
 export interface PaginationResult<T> {
   data: T[];
-  total: number;
-  limit: number;
-  offset: number;
-  hasMore: boolean;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+  }
 }
 
 const BASE_URL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -36,28 +34,16 @@ export default function QuizAPI() {
   const buildQueryParams = (params: QuizParams): Record<string, any> => {
     const queryParams: Record<string, any> = {};
     
-    if (params.search) {
-      queryParams.search = params.search;
+    if (params.page !== undefined) {
+      queryParams.page = params.page;
     }
     
-    if (params.categories && params.categories.length > 0) {
-      queryParams.categories = params.categories;
-    }
-    
-    if (params.limit) {
+    if (params.limit !== undefined) {
       queryParams.limit = params.limit;
     }
     
-    if (params.offset !== undefined) {
-      queryParams.offset = params.offset;
-    }
-    
-    if (params.sort) {
-      queryParams.sort = params.sort;
-    }
-    
-    if (params.order) {
-      queryParams.order = params.order;
+    if (params.published !== undefined) {
+      queryParams.published = params.published.toString();
     }
     
     return queryParams;
@@ -68,31 +54,25 @@ export default function QuizAPI() {
     fetchQuizAll: async (params?: QuizParams): Promise<PaginationResult<Quiz>> => {
       try {
         const queryParams = params ? buildQueryParams(params) : {};
-        const response = await api.get('/api/v1/quiz', { params: queryParams });
+        const response = await api.get('/api/v1/quizzes', { params: queryParams });
         
-        // ปรับรูปแบบการส่งคืนข้อมูลให้เป็น PaginationResult
-        const result = response.data || { 
-          quizzes: [], 
-          total: 0, 
-          limit: params?.limit || 10, 
-          offset: params?.offset || 0 
-        };
-        
-        return {
-          data: result.quizzes || [],
-          total: result.total || 0,
-          limit: result.limit || params?.limit || 10,
-          offset: result.offset || params?.offset || 0,
-          hasMore: result.total > (result.offset + result.limit)
+        return response.data || { 
+          data: [], 
+          meta: {
+            total: 0,
+            page: params?.page || 0,
+            limit: params?.limit || 10
+          }
         };
       } catch (error) {
         console.error('Failed to get quizzes:', error);
         return {
           data: [],
-          total: 0,
-          limit: params?.limit || 10,
-          offset: params?.offset || 0,
-          hasMore: false
+          meta: {
+            total: 0,
+            page: params?.page || 0,
+            limit: params?.limit || 10
+          }
         };
       }
     },
@@ -100,26 +80,130 @@ export default function QuizAPI() {
     // Fetch quiz by ID
     fetchQuizById: async (id: number): Promise<Quiz | null> => {
       try {
-        const response = await api.get(`/api/v1/quiz${id}`);
-        return response.data.quiz || null;
+        const response = await api.get(`/api/v1/quizzes/${id}`);
+        return response.data.data || null;
       } catch (error) {
         console.error('Failed to get quiz:', error);
         return null;
       }
     },
 
-    // Create a new quiz
-    createQuiz: async (quizData: Partial<Quiz>): Promise<Quiz | null> => {
+    // Fetch user's quizzes
+    fetchMyQuizzes: async (params?: QuizParams): Promise<PaginationResult<Quiz>> => {
       try {
-        const formData = objectToFormData(quizData);
-        const response = await api.post('/api/v1/quiz', formData,
-          {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+        const queryParams = params ? buildQueryParams(params) : {};
+        const response = await api.get('/api/v1/quizzes/my', { params: queryParams });
+        
+        return response.data || { 
+          data: [], 
+          meta: {
+            total: 0,
+            page: params?.page || 0,
+            limit: params?.limit || 10
           }
-        );
-        return response.data.quiz || null;
+        };
+      } catch (error) {
+        console.error('Failed to get my quizzes:', error);
+        return {
+          data: [],
+          meta: {
+            total: 0,
+            page: params?.page || 0,
+            limit: params?.limit || 10
+          }
+        };
+      }
+    },
+
+    // Create a new quiz with FormData
+    createQuizWithForm: async (quizData: {
+      title: string;
+      description: string;
+      timeLimit: number;
+      isPublished: boolean;
+      categories: number[];
+      questions: Array<{
+        text: string;
+        choices: Array<{
+          text: string;
+          isCorrect: boolean;
+        }>
+      }>
+    }, files: {
+      quizImage?: File;
+      questionImages?: File[];
+      choiceImages?: Array<Array<File | null>>;
+    }): Promise<Quiz | null> => {
+      try {
+        const formData = new FormData();
+        
+        // Add quiz data as JSON string
+        formData.append('quizData', JSON.stringify(quizData));
+        
+        // Add quiz image if exists
+        if (files.quizImage) {
+          formData.append('quizImage', files.quizImage);
+        }
+        
+        // Add question images if exist
+        if (files.questionImages) {
+          files.questionImages.forEach((image, i) => {
+            if (image) {
+              formData.append(`questionImage_${i}`, image);
+            }
+          });
+        }
+        
+        // Add choice images if exist
+        if (files.choiceImages) {
+          files.choiceImages.forEach((choiceImageRow, i) => {
+            choiceImageRow.forEach((image, j) => {
+              if (image) {
+                formData.append(`choiceImage_${i}_${j}`, image);
+              }
+            });
+          });
+        }
+        
+        const response = await api.post('/api/v1/quizzes/form', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        return response.data.data || null;
+      } catch (error) {
+        console.error('Failed to create quiz:', error);
+        return null;
+      }
+    },
+
+    // Create a new quiz with JSON
+    createQuiz: async (quizData: {
+      title: string;
+      description: string;
+      timeLimit: number;
+      isPublished: boolean;
+      imageURL?: string;
+      categories: number[];
+      questions: Array<{
+        text: string;
+        imageURL?: string;
+        choices: Array<{
+          text: string;
+          imageURL?: string;
+          isCorrect: boolean;
+        }>
+      }>
+    }): Promise<Quiz | null> => {
+      try {
+        const response = await api.post('/api/v1/quizzes', quizData, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        return response.data.data || null;
       } catch (error) {
         console.error('Failed to create quiz:', error);
         return null;
@@ -129,14 +213,12 @@ export default function QuizAPI() {
     // Update an existing quiz
     updateQuiz: async (id: number, quizData: Partial<Quiz>): Promise<Quiz | null> => {
       try {
-        const response = await api.put(`/api/v1/quiz${id}`, quizData
-          , {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            }
+        const response = await api.patch(`/api/v1/quizzes/${id}`, quizData, {
+          headers: {
+            'Content-Type': 'application/json',
           }
-        );
-        return response.data.quiz || null;
+        });
+        return response.data.data || null;
       } catch (error) {
         console.error('Failed to update quiz:', error);
         return null;
@@ -146,22 +228,34 @@ export default function QuizAPI() {
     // Delete a quiz
     deleteQuiz: async (id: number): Promise<boolean> => {
       try {
-        await api.delete(`/api/v1/quiz/${id}`);
-        return true;
+        const response = await api.delete(`/api/v1/quizzes/${id}`);
+        return response.data.message?.includes('success') || false;
       } catch (error) {
         console.error('Failed to delete quiz:', error);
         return false;
       }
     },
 
-    // ดึงหมวดหมู่ทั้งหมดของควิซ
-    fetchQuizCategories: async (): Promise<{ id: number, name: string }[]> => {
+    // Upload a file (for separate file uploads)
+    uploadFile: async (file: File, type: 'quiz' | 'question' | 'choice', oldFileURL?: string): Promise<string | null> => {
       try {
-        const response = await api.get('/api/v1/quiz/categories');
-        return response.data?.categories || [];
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        if (oldFileURL) {
+          formData.append('old_file_url', oldFileURL);
+        }
+        
+        const response = await api.post(`/api/upload/${type}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        return response.data.url || null;
       } catch (error) {
-        console.error('Failed to fetch quiz categories:', error);
-        return [];
+        console.error(`Failed to upload ${type} file:`, error);
+        return null;
       }
     }
   };

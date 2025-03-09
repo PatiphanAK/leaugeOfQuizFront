@@ -1,31 +1,35 @@
 export interface Quiz {
     id: number;
     title: string;
-    imageURL: string;
     description: string;
-    questions: Question[];
     timeLimit: number;
     isPublished: boolean;
-    categories: string[];
+    imageURL: string;
+    creatorID: number;
+    createdAt: string;
+    updatedAt: string;
+    questions: Question[];
+    categories: Category[];
 }
 
 export interface Question {
     id: number;
-    image: string;
-    question: string;
-    answers: Choice[];
+    quizID: number;
+    text: string;
+    imageURL: string;
+    choices: Choice[];
 }
 
 export interface Choice {
     id: number;
-    image: string;
-    answer: string;
+    questionID: number;
+    text: string;
+    imageURL: string;
     isCorrect: boolean;
 }
 
-export interface Answer {
+export interface Category {
     id: number;
-    answer: string;
-    isCorrect: boolean;
-    image: string;
+    name: string;
+    description: string;
 }
