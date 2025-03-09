@@ -25,6 +25,7 @@ onMounted(async () => {
     
     if (result) {
       quiz.value = result;
+      console.log('Quiz:', quiz.value);
     } else {
       error.value = 'Quiz not found';
     }
@@ -43,10 +44,10 @@ const navigateToEdit = () => {
 const deleteQuizConfirm = async () => {
   if (!quiz.value) return;
   
-  if (confirm(`Are you sure you want to delete "${quiz.value.title}"?`)) {
+  if (confirm(`Are you sure you want to delete "${quiz.value.Title}"?`)) {
     try {
       isLoading.value = true;
-      const result = await quizAPI.deleteQuiz(quiz.value.id);
+      const result = await quizAPI.deleteQuiz(quiz.value.ID);
       
       if (result) {
         router.push('/dashboard/quizzes');
@@ -85,23 +86,23 @@ const deleteQuizConfirm = async () => {
     <div v-else-if="quiz" class="bg-white shadow rounded-lg">
       <!-- Quiz Header with Image -->
       <div class="relative">
-        <div v-if="quiz.imageURL" class="w-full h-60 overflow-hidden rounded-t-lg">
-          <img :src="quiz.imageURL" alt="Quiz cover" class="w-full h-full object-cover" />
+        <div v-if="quiz.ImageURL" class="w-full h-60 overflow-hidden rounded-t-lg">
+          <img :src="quiz.ImageURL" alt="Quiz cover" class="w-full h-full object-cover" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
         </div>
         
-        <div class="p-6" :class="{ 'absolute bottom-0 text-white': quiz.imageURL }">
+        <div class="p-6" :class="{ 'absolute bottom-0 text-white': quiz.ImageURL }">
           <div class="flex justify-between items-start">
             <div>
-              <h1 class="text-3xl font-bold">{{ quiz.title }}</h1>
+              <h1 class="text-3xl font-bold">{{ quiz.Title }}</h1>
               <div class="flex items-center mt-2">
-                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.imageURL }">
-                  {{ quiz.timeLimit }} seconds
+                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.ImageURL }">
+                  {{ quiz.TimeLimit }} seconds
                 </span>
-                <span v-if="quiz.isPublished" class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.imageURL }">
+                <span v-if="quiz.IsPublished" class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.ImageURL }">
                   Published
                 </span>
-                <span v-else class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.imageURL }">
+                <span v-else class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.ImageURL }">
                   Draft
                 </span>
               </div>
@@ -136,15 +137,15 @@ const deleteQuizConfirm = async () => {
         <!-- Description -->
         <div class="mb-8">
           <h2 class="text-lg font-medium mb-2">Description</h2>
-          <p class="text-gray-700">{{ quiz.description }}</p>
+          <p class="text-gray-700">{{ quiz.Description }}</p>
         </div>
         
         <!-- Categories -->
-        <div v-if="quiz.categories && quiz.categories.length > 0" class="mb-8">
+        <div v-if="quiz.Categories && quiz.Categories.length > 0" class="mb-8">
           <h2 class="text-lg font-medium mb-2">Categories</h2>
           <div class="flex flex-wrap gap-2">
             <span 
-              v-for="category in quiz.categories" 
+              v-for="category in quiz.Categories" 
               :key="typeof category === 'object' ? category.ID : category" 
               class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full"
             >
@@ -155,9 +156,9 @@ const deleteQuizConfirm = async () => {
         
         <!-- Questions Preview -->
         <div class="mb-8">
-          <h2 class="text-lg font-medium mb-4">Questions ({{ quiz.questions.length }})</h2>
+          <h2 class="text-lg font-medium mb-4">Questions ({{ quiz.Questions.length }})</h2>
           
-          <div v-for="(question, questionIndex) in quiz.questions" :key="question.id" class="mb-6 border border-gray-200 rounded-lg p-4">
+          <div v-for="(question, questionIndex) in quiz.Questions" :key="question.id" class="mb-6 border border-gray-200 rounded-lg p-4">
             <div class="flex items-start">
               <div class="bg-indigo-100 text-indigo-800 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-1">
                 {{ questionIndex + 1 }}

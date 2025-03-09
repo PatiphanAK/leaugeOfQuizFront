@@ -1,15 +1,15 @@
 export interface Quiz {
-    id: number;
-    title: string;
-    description: string;
-    timeLimit: number;
-    isPublished: boolean;
-    imageURL: string;
-    creatorID: number;
-    createdAt: string;
-    updatedAt: string;
-    questions: Question[];
-    categories: Category[];
+    ID: number;
+    Title: string;
+    Description: string;
+    TimeLimit: number;
+    IsPublished: boolean;
+    ImageURL: string;
+    CreatorID: number;
+    CreatedAt: string;
+    UpdatedAt: string;
+    Questions: Question[];
+    Categories: Category[];
 }
 
 export interface Question {
