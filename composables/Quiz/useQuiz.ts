@@ -6,6 +6,7 @@ export default function useQuiz() {
   const api = QuizAPI();
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const categories = ref<Category[]>([]);
 
   const fetchQuizAll = async (params?: QuizParams): Promise<PaginationResult<Quiz>> => {
     loading.value = true;
@@ -21,7 +22,7 @@ export default function useQuiz() {
         data: [],
         meta: {
           total: 0,
-          page: params?.page || 0,
+          page: params?.page || 1,
           limit: params?.limit || 10
         }
       };
@@ -44,7 +45,7 @@ export default function useQuiz() {
         data: [],
         meta: {
           total: 0,
-          page: params?.page || 0,
+          page: params?.page || 1,
           limit: params?.limit || 10
         }
       };
@@ -64,6 +65,23 @@ export default function useQuiz() {
       error.value = 'Failed to fetch quiz details';
       console.error('Failed to get quiz:', err);
       return null;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchCategories = async (): Promise<Category[]> => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await api.fetchCategories();
+      categories.value = response;
+      return response;
+    } catch (err) {
+      error.value = 'Failed to fetch categories';
+      console.error('Failed to get categories:', err);
+      return [];
     } finally {
       loading.value = false;
     }
@@ -159,16 +177,35 @@ export default function useQuiz() {
       loading.value = false;
     }
   };
+
+  const deleteFile = async (filename: string, type: 'quiz' | 'question' | 'choice'): Promise<boolean> => {
+    loading.value = true;
+    error.value = null;
+    
+    try {
+      const response = await api.deleteFile(filename, type);
+      return response;
+    } catch (err) {
+      error.value = 'Failed to delete file';
+      console.error('Failed to delete file:', err);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  };
   
   return {
     fetchQuizAll,
     fetchQuizById,
     fetchMyQuizzes,
+    fetchCategories,
     createQuiz,
     updateQuiz,
     deleteQuiz,
     uploadFile,
+    deleteFile,
     loading,
-    error
+    error,
+    categories
   };
 }

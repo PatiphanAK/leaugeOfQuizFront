@@ -1,6 +1,5 @@
-<script lang="ts">
-import QuizBaseForm from '~/components/Quiz/QuizBaseForm.vue';
+<script lang="ts" setup>
 </script>
 <template>
-    <QuizBaseForm />
+    
 </template>

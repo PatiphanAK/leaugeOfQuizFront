@@ -1,11 +1,13 @@
-import type { Quiz, Question, Choice } from "~/types/Quiz/quiz.interface";
+import type { Quiz, Question, Choice, Category } from "~/types/Quiz/quiz.interface";
 import { objectToFormData } from "@/utils/formData"
 import axios from 'axios';
 
 export interface QuizParams {
   page?: number;
   limit?: number;
-  published?: boolean;
+  isPublished?: boolean;
+  search?: string;
+  categories?: number[];
 }
 
 export interface PaginationResult<T> {
@@ -42,8 +44,16 @@ export default function QuizAPI() {
       queryParams.limit = params.limit;
     }
     
-    if (params.published !== undefined) {
-      queryParams.published = params.published.toString();
+    if (params.isPublished !== undefined) {
+      queryParams.isPublished = params.isPublished.toString();
+    }
+    
+    if (params.search !== undefined && params.search.trim() !== '') {
+      queryParams.search = params.search;
+    }
+    
+    if (params.categories !== undefined && params.categories.length > 0) {
+      queryParams.categories = params.categories.join(',');
     }
     
     return queryParams;
@@ -60,7 +70,7 @@ export default function QuizAPI() {
           data: [], 
           meta: {
             total: 0,
-            page: params?.page || 0,
+            page: params?.page || 1,
             limit: params?.limit || 10
           }
         };
@@ -70,7 +80,7 @@ export default function QuizAPI() {
           data: [],
           meta: {
             total: 0,
-            page: params?.page || 0,
+            page: params?.page || 1,
             limit: params?.limit || 10
           }
         };
@@ -98,7 +108,7 @@ export default function QuizAPI() {
           data: [], 
           meta: {
             total: 0,
-            page: params?.page || 0,
+            page: params?.page || 1,
             limit: params?.limit || 10
           }
         };
@@ -108,10 +118,21 @@ export default function QuizAPI() {
           data: [],
           meta: {
             total: 0,
-            page: params?.page || 0,
+            page: params?.page || 1,
             limit: params?.limit || 10
           }
         };
+      }
+    },
+
+    // Fetch all categories
+    fetchCategories: async (): Promise<Category[]> => {
+      try {
+        const response = await api.get('/api/v1/quizzes/categories');
+        return response.data.categories || [];
+      } catch (error) {
+        console.error('Failed to get categories:', error);
+        return [];
       }
     },
 
@@ -256,6 +277,17 @@ export default function QuizAPI() {
       } catch (error) {
         console.error(`Failed to upload ${type} file:`, error);
         return null;
+      }
+    },
+    
+    // Delete a file
+    deleteFile: async (filename: string, type: 'quiz' | 'question' | 'choice'): Promise<boolean> => {
+      try {
+        const response = await api.delete(`/api/upload/${type}/${filename}`);
+        return response.data.message?.includes('success') || false;
+      } catch (error) {
+        console.error(`Failed to delete ${type} file:`, error);
+        return false;
       }
     }
   };
