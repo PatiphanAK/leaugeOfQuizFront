@@ -1,15 +1,15 @@
 <script lang="ts" setup>
 import { ref, onMounted, watch } from 'vue';
-import SearchBar from '~/components/Quiz/SearchBar.vue';
 import QuizLayout from '~/components/Quiz/QuizLayout.vue';
 import useQuiz from '~/composables/Quiz/useQuiz';
 import Pagination from '~/components/Base/Pagination.vue';
+import type { Quiz } from '~/types/Quiz/quiz.interface';
 
 const quiz = useQuiz();
 const currentPage = ref(1);
 const totalPages = ref(1);
 const isLoading = ref(true);
-import type { Quiz } from '~/types/Quiz/quiz.interface';
+
 
 const quizzes = ref<Quiz[]>([]);
 const error = ref('');

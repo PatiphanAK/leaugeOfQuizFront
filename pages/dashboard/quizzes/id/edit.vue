@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import useQuiz from "~/composables/Quiz/useQuiz";
 import type { Quiz } from "@/types/Quiz/quiz.interface";
+import QuizBaseForm from '~/components/Quiz/QuizBaseForm.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -25,6 +26,7 @@ onMounted(async () => {
     
     if (result) {
       quiz.value = result;
+      console.log("Quiz loaded for edit:", quiz.value);
     } else {
       error.value = 'Quiz not found';
     }
@@ -61,11 +63,10 @@ const handleCancel = () => {
     
     <!-- Quiz Form -->
     <template v-else-if="quiz">
-      <!-- Instead of IntegratedQuizForm, use your actual form component name -->
-       <QuizBaseForm
-        :quiz="quiz"
+      <QuizBaseForm
+        :initialQuiz="quiz"
         @cancel="handleCancel"
-        />
+      />
     </template>
   </div>
 </template>

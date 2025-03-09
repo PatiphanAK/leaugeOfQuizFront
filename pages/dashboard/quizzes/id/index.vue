@@ -25,7 +25,7 @@ onMounted(async () => {
     
     if (result) {
       quiz.value = result;
-      console.log('Quiz:', quiz.value);
+      console.log("Quiz loaded for detail view:", quiz.value);
     } else {
       error.value = 'Quiz not found';
     }
@@ -146,59 +146,63 @@ const deleteQuizConfirm = async () => {
           <div class="flex flex-wrap gap-2">
             <span 
               v-for="category in quiz.Categories" 
-              :key="typeof category === 'object' ? category.ID : category" 
+              :key="category.ID" 
               class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full"
             >
-              {{ typeof category === 'object' ? category.Name : category }}
+              {{ category.Name }}
             </span>
           </div>
         </div>
         
         <!-- Questions Preview -->
         <div class="mb-8">
-          <h2 class="text-lg font-medium mb-4">Questions ({{ quiz.Questions.length }})</h2>
+          <h2 class="text-lg font-medium mb-4">Questions ({{ quiz.Questions ? quiz.Questions.length : 0 }})</h2>
           
-          <div v-for="(question, questionIndex) in quiz.Questions" :key="question.id" class="mb-6 border border-gray-200 rounded-lg p-4">
-            <div class="flex items-start">
-              <div class="bg-indigo-100 text-indigo-800 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-1">
-                {{ questionIndex + 1 }}
-              </div>
-              <div class="flex-1">
-                <h3 class="font-medium mb-2">{{ question.text }}</h3>
-                
-                <!-- Question Image -->
-                <div v-if="question.imageURL" class="mb-3">
-                  <img :src="question.imageURL" alt="Question image" class="h-40 object-contain rounded-md" />
+          <div v-if="quiz.Questions && quiz.Questions.length > 0">
+            <div v-for="(question, questionIndex) in quiz.Questions" :key="question.id" class="mb-6 border border-gray-200 rounded-lg p-4">
+              <div class="flex items-start">
+                <div class="bg-indigo-100 text-indigo-800 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-1">
+                  {{ questionIndex + 1 }}
                 </div>
-                
-                <!-- Choices -->
-                <ul class="space-y-2">
-                  <li 
-                    v-for="(choice, choiceIndex) in question.choices" 
-                    :key="choice.id" 
-                    class="flex items-start p-2 rounded-md" 
-                    :class="{ 'bg-green-50 border border-green-200': choice.isCorrect }"
-                  >
-                    <div class="flex-shrink-0 mr-2">
-                      <div class="w-5 h-5 rounded-full border flex items-center justify-center" :class="choice.isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'">
-                        <svg v-if="choice.isCorrect" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                        </svg>
+                <div class="flex-1">
+                  <h3 class="font-medium mb-2">{{ question.text }}</h3>
+                  
+                  <!-- Question Image -->
+                  <div v-if="question.imageURL" class="mb-3">
+                    <img :src="question.imageURL" alt="Question image" class="h-40 object-contain rounded-md" />
+                  </div>
+                  
+                  <!-- Choices -->
+                  <ul v-if="question.choices && question.choices.length > 0" class="space-y-2">
+                    <li 
+                      v-for="(choice, choiceIndex) in question.choices" 
+                      :key="choice.id" 
+                      class="flex items-start p-2 rounded-md" 
+                      :class="{ 'bg-green-50 border border-green-200': choice.isCorrect }"
+                    >
+                      <div class="flex-shrink-0 mr-2">
+                        <div class="w-5 h-5 rounded-full border flex items-center justify-center" :class="choice.isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'">
+                          <svg v-if="choice.isCorrect" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
                       </div>
-                    </div>
-                    <div class="flex-1">
-                      <span :class="{ 'font-medium': choice.isCorrect }">{{ choice.text }}</span>
-                      
-                      <!-- Choice Image -->
-                      <div v-if="choice.imageURL" class="mt-2">
-                        <img :src="choice.imageURL" alt="Choice image" class="h-24 object-contain rounded-md" />
+                      <div class="flex-1">
+                        <span :class="{ 'font-medium': choice.isCorrect }">{{ choice.text }}</span>
+                        
+                        <!-- Choice Image -->
+                        <div v-if="choice.imageURL" class="mt-2">
+                          <img :src="choice.imageURL" alt="Choice image" class="h-24 object-contain rounded-md" />
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                </ul>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
+          
+          <p v-else class="text-gray-500">No questions added to this quiz yet.</p>
         </div>
       </div>
     </div>

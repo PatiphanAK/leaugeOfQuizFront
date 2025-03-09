@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import useQuiz from "~/composables/Quiz/useQuiz";
 import type { Quiz, Question, Choice, Category } from "@/types/Quiz/quiz.interface";
 import QuestionForm from '@/components/Quiz/QuestionForm.vue';
+
+// Define props
+const props = defineProps<{
+  initialQuiz?: Quiz
+}>();
 
 const router = useRouter();
 const route = useRoute();
@@ -11,21 +16,30 @@ const quizAPI = useQuiz();
 
 // State management
 const isLoading = ref(false);
-const isEditMode = computed(() => route.params.id !== undefined);
+const isEditMode = computed(() => !!props.initialQuiz || route.params.id !== undefined);
 const categories = ref<Category[]>([]);
 const quizData = ref<Quiz>({
-  id: 0,
-  title: '',
-  description: '',
-  timeLimit: 30,
-  isPublished: false,
-  imageURL: '',
-  creatorID: 0,
-  createdAt: '',
-  updatedAt: '',
-  questions: [],
-  categories: []
+  ID: 0,
+  Title: '',
+  Description: '',
+  TimeLimit: 30,
+  IsPublished: false,
+  ImageURL: '',
+  CreatorID: 0,
+  CreatedAt: '',
+  UpdatedAt: '',
+  Questions: [],
+  Categories: []
 });
+
+// Initialize from props if available
+watch(() => props.initialQuiz, (newQuiz) => {
+  if (newQuiz) {
+    quizData.value = { ...newQuiz };
+    // Initialize arrays for question and choice images after quiz data is set
+    initializeImageArrays();
+  }
+}, { immediate: true });
 
 // File uploads
 const quizImage = ref<File | null>(null);
@@ -40,8 +54,8 @@ onMounted(async () => {
     // Load categories
     await fetchCategories();
     
-    // If in edit mode, load the quiz
-    if (isEditMode.value) {
+    // If in edit mode and no initialQuiz prop, load the quiz from the route param
+    if (isEditMode.value && !props.initialQuiz && route.params.id) {
       await fetchQuiz();
     }
   } catch (error) {
@@ -54,8 +68,8 @@ onMounted(async () => {
 // Fetch categories
 const fetchCategories = async () => {
   categories.value = await quizAPI.fetchCategories();
+  console.log("Categories fetched:", categories.value);
 };
-
 
 // Fetch quiz details in edit mode
 const fetchQuiz = async () => {
@@ -82,39 +96,43 @@ const initializeImageArrays = () => {
   choiceImages.value = [];
   
   // Create placeholder arrays based on quiz questions
-  quizData.value.questions.forEach((question) => {
-    questionImages.value.push(null);
-    
-    const choiceImageArray: (File | null)[] = [];
-    question.choices.forEach(() => {
-      choiceImageArray.push(null);
+  if (quizData.value.Questions) {
+    quizData.value.Questions.forEach((question) => {
+      questionImages.value.push(null);
+      
+      const choiceImageArray: (File | null)[] = [];
+      if (question.choices) {
+        question.choices.forEach(() => {
+          choiceImageArray.push(null);
+        });
+      }
+      
+      choiceImages.value.push(choiceImageArray);
     });
-    
-    choiceImages.value.push(choiceImageArray);
-  });
+  }
 };
 
 // Question management
 const addQuestion = () => {
   const newQuestion: Question = {
     id: Math.floor(Math.random() * -1000), // Temporary negative ID for new questions
-    quizID: quizData.value.id || 0,
+    quizID: quizData.value.ID || 0,
     text: '',
     imageURL: '',
     choices: []
   };
   
-  quizData.value.questions.push(newQuestion);
+  quizData.value.Questions.push(newQuestion);
   questionImages.value.push(null);
   choiceImages.value.push([]);
 };
 
 const updateQuestion = (index: number, updatedQuestion: Question) => {
-  quizData.value.questions[index] = updatedQuestion;
+  quizData.value.Questions[index] = updatedQuestion;
 };
 
 const removeQuestion = (index: number) => {
-  quizData.value.questions.splice(index, 1);
+  quizData.value.Questions.splice(index, 1);
   questionImages.value.splice(index, 1);
   choiceImages.value.splice(index, 1);
 };
@@ -148,12 +166,12 @@ const submitForm = async () => {
   try {
     // Prepare quiz data
     const formattedQuizData = {
-      title: quizData.value.title,
-      description: quizData.value.description,
-      timeLimit: quizData.value.timeLimit,
-      isPublished: quizData.value.isPublished,
-      categories: quizData.value.categories.map(cat => typeof cat === 'object' ? cat.ID : cat),
-      questions: quizData.value.questions.map(question => ({
+      title: quizData.value.Title,
+      description: quizData.value.Description,
+      timeLimit: quizData.value.TimeLimit,
+      isPublished: quizData.value.IsPublished,
+      categories: quizData.value.Categories.map(cat => cat.ID).filter(id => id > 0),
+      questions: quizData.value.Questions.map(question => ({
         text: question.text,
         choices: question.choices.map(choice => ({
           text: choice.text,
@@ -184,20 +202,29 @@ const submitForm = async () => {
     if (choiceImages.value.length > 0) {
       files.choiceImages = choiceImages.value;
     }
+    
     console.log("Formatted Quiz Data:", formattedQuizData);
+    console.log("Files:", files);
+    
     let result;
     
     if (isEditMode.value) {
       // Update existing quiz
-      result = await quizAPI.updateQuiz(Number(route.params.id), quizData.value);
+      const quizId = props.initialQuiz?.ID || Number(route.params.id);
+      console.log("Updating quiz with ID:", quizId);
+      result = await quizAPI.updateQuiz(quizId, quizData.value);
     } else {
-    //   // Create new quiz
+      // Create new quiz
+      console.log("Creating new quiz");
       result = await quizAPI.createQuiz(formattedQuizData, files);
     }
     
     if (result) {
       // Navigate to quiz list on success
+      console.log("Quiz saved successfully:", result);
       router.push('/dashboard/quizzes');
+    } else {
+      console.error("Failed to save quiz - no result returned");
     }
   } catch (error) {
     console.error('Error submitting quiz:', error);
@@ -209,6 +236,9 @@ const submitForm = async () => {
 const cancel = () => {
   router.push('/dashboard/quizzes');
 };
+
+// Define emits (if needed for parent components)
+defineEmits(['cancel']);
 </script>
 
 <template>
@@ -236,7 +266,7 @@ const cancel = () => {
             <input
               type="text"
               id="title"
-              v-model="quizData.title"
+              v-model="quizData.Title"
               required
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
             />
@@ -244,12 +274,12 @@ const cancel = () => {
           
           <div>
             <label for="timeLimit" class="block text-sm font-medium">
-              Time Limit (secounds)
+              Time Limit (seconds)
             </label>
             <input
               type="number"
               id="timeLimit"
-              v-model="quizData.timeLimit"
+              v-model="quizData.TimeLimit"
               min="1"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
             />
@@ -262,7 +292,7 @@ const cancel = () => {
           </label>
           <textarea
             id="description"
-            v-model="quizData.description"
+            v-model="quizData.Description"
             rows="3"
             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
           ></textarea>
@@ -274,16 +304,16 @@ const cancel = () => {
             Quiz Image
           </label>
           
-          <div v-if="quizData.imageURL" class="mt-2 mb-4">
+          <div v-if="quizData.ImageURL" class="mt-2 mb-4">
             <div class="relative w-56">
               <img 
-                :src="quizData.imageURL" 
+                :src="quizData.ImageURL" 
                 alt="Quiz image" 
                 class="h-40 w-56 object-cover rounded-md"
               />
               <button 
                 type="button" 
-                @click="quizData.imageURL = ''" 
+                @click="quizData.ImageURL = ''" 
                 class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -309,7 +339,7 @@ const cancel = () => {
           </label>
           <select
             id="categories"
-            v-model="quizData.categories"
+            v-model="quizData.Categories"
             multiple
             class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
           >
@@ -317,6 +347,7 @@ const cancel = () => {
               v-for="category in categories" 
               :key="category.ID" 
               :value="category"
+              v-if="categories.length > 0"
             >
               {{ category.Name }}
             </option>
@@ -328,7 +359,7 @@ const cancel = () => {
           <input
             type="checkbox"
             id="isPublished"
-            v-model="quizData.isPublished"
+            v-model="quizData.IsPublished"
             class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
           />
           <label for="isPublished" class="ml-2 block text-sm text-gray-900">
@@ -340,12 +371,12 @@ const cancel = () => {
         <div class="border-t border-gray-200 pt-6">
           <h2 class="text-lg font-medium">Questions</h2>
           
-          <p v-if="quizData.questions.length === 0" class="text-gray-500 mt-2">
+          <p v-if="!quizData.Questions || quizData.Questions.length === 0" class="text-gray-500 mt-2">
             No questions added yet.
           </p>
           
           <QuestionForm
-            v-for="(question, index) in quizData.questions"
+            v-for="(question, index) in quizData.Questions"
             :key="index"
             :question="question"
             :question-number="index + 1"
