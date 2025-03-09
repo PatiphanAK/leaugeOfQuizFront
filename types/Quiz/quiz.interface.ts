@@ -29,7 +29,7 @@ export interface Choice {
 }
 
 export interface Category {
-    id: number;
-    name: string;
+    ID: number;
+    Name: string;
     description: string;
 }

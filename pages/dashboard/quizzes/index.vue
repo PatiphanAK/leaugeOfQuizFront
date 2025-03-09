@@ -22,12 +22,12 @@ const fetchQuizzes = async () => {
   try {
     const response = await quiz.fetchQuizAll({
       limit: 10,
-      offset: (currentPage.value - 1) * 10, // Correct offset calculation
+      page: (currentPage.value - 1) * 10, // Correct offset calculation
       search: searchTerm.value
     });
     
     quizzes.value = response.data;
-    totalPages.value = Math.ceil(response.total / 10); // Calculate total pages
+    totalPages.value = Math.ceil(response.meta.total / 10); // Calculate total pages
   } catch (err) {
     error.value = 'Failed to load quizzes. Please try again later.';
     console.error('Error fetching quizzes:', err);
