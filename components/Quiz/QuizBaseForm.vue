@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import useQuiz from "~/composables/Quiz/useQuiz";
 import type { Quiz, Question, Choice, Category } from "@/types/Quiz/quiz.interface";
 import QuestionForm from '@/components/Quiz/QuestionForm.vue';
-
-// Define props
-const props = defineProps<{
-  initialQuiz?: Quiz
-}>();
 
 const router = useRouter();
 const route = useRoute();
@@ -16,7 +11,8 @@ const quizAPI = useQuiz();
 
 // State management
 const isLoading = ref(false);
-const isEditMode = computed(() => !!props.initialQuiz || route.params.id !== undefined);
+const error = ref<string | null>(null);
+const isEditMode = computed(() => route.params.id !== undefined);
 const categories = ref<Category[]>([]);
 const quizData = ref<Quiz>({
   ID: 0,
@@ -32,15 +28,6 @@ const quizData = ref<Quiz>({
   Categories: []
 });
 
-// Initialize from props if available
-watch(() => props.initialQuiz, (newQuiz) => {
-  if (newQuiz) {
-    quizData.value = { ...newQuiz };
-    // Initialize arrays for question and choice images after quiz data is set
-    initializeImageArrays();
-  }
-}, { immediate: true });
-
 // File uploads
 const quizImage = ref<File | null>(null);
 const questionImages = ref<(File | null)[]>([]);
@@ -54,9 +41,12 @@ onMounted(async () => {
     // Load categories
     await fetchCategories();
     
-    // If in edit mode and no initialQuiz prop, load the quiz from the route param
-    if (isEditMode.value && !props.initialQuiz && route.params.id) {
-      await fetchQuiz();
+    // If in edit mode, load the quiz data
+    if (isEditMode.value && route.params.id) {
+      await fetchQuiz(Number(route.params.id));
+    } else {
+      // Initialize arrays for question and choice images
+      initializeImageArrays();
     }
   } catch (error) {
     console.error('Error initializing form:', error);
@@ -72,20 +62,31 @@ const fetchCategories = async () => {
 };
 
 // Fetch quiz details in edit mode
-const fetchQuiz = async () => {
-  if (!route.params.id) return;
-  
-  const quizId = Number(route.params.id);
+const fetchQuiz = async (quizId: number) => {
+  console.log("Fetching quiz with ID:", quizId);
   const fetchedQuiz = await quizAPI.fetchQuizById(quizId);
   
   if (fetchedQuiz) {
+    console.log("Quiz fetched successfully:", fetchedQuiz);
     quizData.value = fetchedQuiz;
     
-    // Initialize arrays for question and choice images
+    // Ensure all questions and choices have the required fields
+    quizData.value.Questions = quizData.value.Questions.map(question => ({
+      ...question,
+      text: question.text || '', 
+      choices: (question.choices || []).map(choice => ({
+        ...choice,
+        text: choice.text || '',
+        isCorrect: choice.isCorrect !== undefined ? choice.isCorrect : false
+      }))
+    }));
+    
+    // Initialize arrays for question and choice images after quiz data is set
     initializeImageArrays();
   } else {
     // Handle quiz not found
-    router.push('/dashboard/quizzes');
+    error.value = "Quiz not found";
+    console.error("Quiz not found");
   }
 };
 
@@ -98,11 +99,13 @@ const initializeImageArrays = () => {
   // Create placeholder arrays based on quiz questions
   if (quizData.value.Questions) {
     quizData.value.Questions.forEach((question) => {
+      // Initialize question image as null
       questionImages.value.push(null);
       
       const choiceImageArray: (File | null)[] = [];
       if (question.choices) {
         question.choices.forEach(() => {
+          // Initialize choice image as null
           choiceImageArray.push(null);
         });
       }
@@ -180,7 +183,7 @@ const submitForm = async () => {
       }))
     };
     
-    // Correctly structure file data to match expected types
+    // Correctly structure file data
     const files: {
       quizImage?: File; 
       questionImages?: File[];
@@ -210,7 +213,7 @@ const submitForm = async () => {
     
     if (isEditMode.value) {
       // Update existing quiz
-      const quizId = props.initialQuiz?.ID || Number(route.params.id);
+      const quizId = Number(route.params.id);
       console.log("Updating quiz with ID:", quizId);
       result = await quizAPI.updateQuiz(quizId, quizData.value);
     } else {
@@ -224,10 +227,12 @@ const submitForm = async () => {
       console.log("Quiz saved successfully:", result);
       router.push('/dashboard/quizzes');
     } else {
+      error.value = "Failed to save quiz";
       console.error("Failed to save quiz - no result returned");
     }
-  } catch (error) {
-    console.error('Error submitting quiz:', error);
+  } catch (err) {
+    error.value = "Error submitting quiz";
+    console.error('Error submitting quiz:', err);
   } finally {
     isLoading.value = false;
   }
@@ -236,9 +241,6 @@ const submitForm = async () => {
 const cancel = () => {
   router.push('/dashboard/quizzes');
 };
-
-// Define emits (if needed for parent components)
-defineEmits(['cancel']);
 </script>
 
 <template>
@@ -253,6 +255,17 @@ defineEmits(['cancel']);
       <!-- Loading Indicator -->
       <div v-if="isLoading" class="flex justify-center my-8">
         <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+      
+      <!-- Error State -->
+      <div v-else-if="error" class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md my-4">
+        <p>{{ error }}</p>
+        <button 
+          @click="router.push('/dashboard/quizzes')" 
+          class="mt-2 text-sm font-medium text-red-600 hover:text-red-800"
+        >
+          Return to Quizzes
+        </button>
       </div>
       
       <!-- Form -->
@@ -377,12 +390,11 @@ defineEmits(['cancel']);
           
           <QuestionForm
             v-for="(question, index) in quizData.Questions"
-            :key="index"
-            :question="question"
+            :key="question.id || index"
+            v-model="quizData.Questions[index]"
             :question-number="index + 1"
             :question-image="questionImages[index]"
             :choice-images="choiceImages[index]"
-            @update:question="updateQuestion(index, $event)"
             @update:questionImage="updateQuestionImage(index, $event)"
             @update:choiceImage="(choiceIndex, image) => updateChoiceImage(index, choiceIndex, image)"
             @remove="removeQuestion(index)"

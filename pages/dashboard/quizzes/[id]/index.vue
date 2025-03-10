@@ -12,6 +12,8 @@ const quiz = ref<Quiz | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 
+
+
 onMounted(async () => {
   if (!route.params.id) {
     router.push('/dashboard/quizzes');

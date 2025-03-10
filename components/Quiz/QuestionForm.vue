@@ -1,176 +1,204 @@
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue';
+import { computed } from 'vue';
 import type { Question, Choice } from "@/types/Quiz/quiz.interface";
 
+// Define props with direct modelValue for v-model support
 const props = defineProps<{
-  question: Question;
-  questionNumber: number;
-  questionImage?: File | null;
-  choiceImages?: (File | null)[];
+  modelValue: Question,
+  questionNumber: number,
+  questionImage: File | null,
+  choiceImages: Array<File | null>
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:question', question: Question): void;
-  (e: 'update:questionImage', image: File | null): void;
-  (e: 'update:choiceImage', index: number, image: File | null): void;
-  (e: 'remove'): void;
-}>();
+// Define emits with 'update:modelValue' for v-model
+const emit = defineEmits([
+  'update:modelValue', 
+  'update:questionImage', 
+  'update:choiceImage', 
+  'remove'
+]);
 
-// Create a reactive copy of the question to work with
-const questionData = reactive<Question>({
-  id: props.question.id || 0,
-  quizID: props.question.quizID,
-  text: props.question.text || '',
-  imageURL: props.question.imageURL || '',
-  choices: [...(props.question.choices || [])],
+// Computed getter/setter for v-model support
+const question = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value)
 });
 
-// Image previews
-const questionImagePreview = ref<string | null>(props.question.imageURL || null);
-const choiceImagePreviews = ref<(string | null)[]>(
-  props.question.choices ? props.question.choices.map(c => c.imageURL || null) : []
-);
-
-// Watch for changes in the local copy and emit them to parent
-watch(questionData, () => {
-  emit('update:question', { ...questionData });
-}, { deep: true });
-
-// Validation
-const hasCorrectAnswer = computed(() => {
-  return questionData.choices.some(choice => choice.isCorrect);
-});
-
-const hasValidationErrors = computed(() => {
-  return (questionData.choices.length > 0 && !hasCorrectAnswer.value) || 
-         (questionData.choices.length < 2);
-});
-
-// Methods
+// Add a new choice
 const addChoice = () => {
-  const newChoice: Omit<Choice, 'id'> & { id?: number } = {
-    questionID: questionData.id,
+  const newChoice: Choice = {
+    id: Math.floor(Math.random() * -1000), // Temporary negative ID for new choices
+    questionID: question.value.id || 0,
     text: '',
+    isCorrect: false,
     imageURL: '',
-    isCorrect: questionData.choices.length === 0, // First choice is correct by default
   };
   
-  // If in edit mode, assign a temporary ID
-  if (questionData.id > 0) {
-    newChoice.id = Math.floor(Math.random() * -1000); // Temporary negative ID
+  if (!question.value.choices) {
+    question.value.choices = [];
   }
   
-  questionData.choices.push(newChoice as Choice);
+  // Create a new array to ensure reactivity
+  const updatedChoices = [...question.value.choices, newChoice];
   
-  // Add a null placeholder for the choice image
-  choiceImagePreviews.value.push(null);
-};
-
-const removeChoice = (index: number) => {
-  const isRemovingCorrect = questionData.choices[index].isCorrect;
-  questionData.choices.splice(index, 1);
-  choiceImagePreviews.value.splice(index, 1);
-  
-  // If we removed the correct answer and have other choices, make the first one correct
-  if (isRemovingCorrect && questionData.choices.length > 0) {
-    questionData.choices[0].isCorrect = true;
-  }
-  
-  // Emit event to remove the choice image in the parent
-  emit('update:choiceImage', index, null);
-};
-
-const setCorrectChoice = (index: number) => {
-  // Set all choices to not correct
-  questionData.choices.forEach((choice, i) => {
-    choice.isCorrect = i === index;
+  emit('update:modelValue', {
+    ...question.value,
+    choices: updatedChoices
   });
 };
 
-// File handling
+// Remove a choice
+const removeChoice = (index: number) => {
+  if (!question.value.choices) return;
+  
+  const updatedChoices = [...question.value.choices];
+  updatedChoices.splice(index, 1);
+  
+  emit('update:modelValue', {
+    ...question.value,
+    choices: updatedChoices
+  });
+};
+
+// Set a choice as correct
+const setCorrect = (index: number) => {
+  if (!question.value.choices) return;
+  
+  const updatedChoices = question.value.choices.map((choice, i) => ({
+    ...choice,
+    isCorrect: i === index
+  }));
+  
+  emit('update:modelValue', {
+    ...question.value,
+    choices: updatedChoices
+  });
+};
+
+// Handle question text change
+const updateQuestionText = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  emit('update:modelValue', {
+    ...question.value,
+    text: target.value
+  });
+};
+
+// Handle question image change
 const handleQuestionImageChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    const file = target.files[0];
-    // Clear the imageURL since we're now using a file
-    questionData.imageURL = '';
-    questionImagePreview.value = URL.createObjectURL(file);
-    emit('update:questionImage', file);
+    emit('update:questionImage', target.files[0]);
   }
 };
 
+// Handle choice image change
 const handleChoiceImageChange = (choiceIndex: number, event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files.length > 0) {
-    const file = target.files[0];
-    // Clear the imageURL since we're now using a file
-    questionData.choices[choiceIndex].imageURL = '';
-    choiceImagePreviews.value[choiceIndex] = URL.createObjectURL(file);
-    emit('update:choiceImage', choiceIndex, file);
+    emit('update:choiceImage', choiceIndex, target.files[0]);
   }
 };
 
-const removeQuestionImage = () => {
-  questionImagePreview.value = null;
-  questionData.imageURL = '';
-  emit('update:questionImage', null);
+// Handle choice text change
+const updateChoiceText = (index: number, event: Event) => {
+  const target = event.target as HTMLInputElement;
+  if (!question.value.choices) return;
+  
+  const updatedChoices = [...question.value.choices];
+  updatedChoices[index] = {
+    ...updatedChoices[index],
+    text: target.value
+  };
+  
+  emit('update:modelValue', {
+    ...question.value,
+    choices: updatedChoices
+  });
 };
 
-const removeChoiceImage = (choiceIndex: number) => {
-  choiceImagePreviews.value[choiceIndex] = null;
-  questionData.choices[choiceIndex].imageURL = '';
-  emit('update:choiceImage', choiceIndex, null);
+// Clear question image URL
+const clearQuestionImage = () => {
+  emit('update:modelValue', {
+    ...question.value,
+    imageURL: ''
+  });
+};
+
+// Clear choice image URL
+const clearChoiceImage = (choiceIndex: number) => {
+  if (!question.value.choices) return;
+  
+  const updatedChoices = [...question.value.choices];
+  updatedChoices[choiceIndex] = {
+    ...updatedChoices[choiceIndex],
+    imageURL: ''
+  };
+  
+  emit('update:modelValue', {
+    ...question.value,
+    choices: updatedChoices
+  });
 };
 </script>
 
 <template>
-    <div class="bg-white shadow rounded-lg p-4 mb-6">
-      <!-- Question Header -->
-      <div class="flex justify-between items-center mb-4">
+  <div class="border border-gray-200 rounded-lg p-4 mb-6">
+    <div class="flex items-start justify-between mb-4">
+      <div class="flex items-center">
+        <div class="bg-indigo-100 text-indigo-800 rounded-full h-6 w-6 flex items-center justify-center mr-3">
+          {{ questionNumber }}
+        </div>
         <h3 class="text-lg font-medium">Question {{ questionNumber }}</h3>
-        <button 
-          type="button" 
-          @click="$emit('remove')" 
-          class="text-red-600 hover:text-red-800 focus:outline-none"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
       </div>
-  
+      
+      <button 
+        type="button" 
+        @click="$emit('remove')"
+        class="inline-flex items-center text-sm text-red-600 hover:text-red-800"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+        Remove
+      </button>
+    </div>
+    
+    <div class="space-y-4">
       <!-- Question Text -->
-      <div class="mb-4">
-        <label for="question-text" class="block text-sm font-medium mb-1">
+      <div>
+        <label :for="`question-${questionNumber}`" class="block text-sm font-medium mb-1">
           Question Text
         </label>
-        <textarea
-          :id="`question-text-${questionNumber}`"
-          v-model="questionData.text"
+        <input
+          :id="`question-${questionNumber}`"
+          type="text"
+          :value="question.text"
+          @input="updateQuestionText"
           required
-          rows="2"
-          class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-          placeholder="Enter your question here"
-        ></textarea>
+          class="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+          placeholder="Enter your question here..."
+        />
       </div>
-  
+      
       <!-- Question Image -->
-      <div class="mb-4">
-        <label class="block text-sm font-medium mb-1">
-          Question Image (Optional)
+      <div>
+        <label :for="`question-image-${questionNumber}`" class="block text-sm font-medium mb-1">
+          Question Image (optional)
         </label>
         
-        <div v-if="questionImagePreview" class="mb-2">
-          <div class="relative w-40">
+        <!-- Display existing image if available -->
+        <div v-if="question.imageURL" class="mt-2 mb-4">
+          <div class="relative w-56">
             <img 
-              :src="questionImagePreview" 
-              alt="Question image preview" 
-              class="h-32 w-40 object-cover rounded-md"
+              :src="question.imageURL" 
+              alt="Question image" 
+              class="h-40 w-56 object-cover rounded-md"
             />
             <button 
               type="button" 
-              @click="removeQuestionImage" 
-              class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+              @click="clearQuestionImage"
+              class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -187,109 +215,101 @@ const removeChoiceImage = (choiceIndex: number) => {
           class="block w-full file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
         />
       </div>
-  
-      <!-- Choices Section -->
-      <div class="mt-6">
-        <div class="flex justify-between items-center mb-2">
-          <h4 class="text-md font-medium">Answer Choices</h4>
+      
+      <!-- Choices -->
+      <div>
+        <label class="block text-sm font-medium mb-2">Answer Choices</label>
+        
+        <div v-if="!question.choices || question.choices.length === 0" class="text-gray-500 text-sm mb-2">
+          No choices added yet.
         </div>
         
-        <!-- Validation Errors -->
-        <div v-if="hasValidationErrors" class="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
-          <p v-if="questionData.choices.length < 2">Please add at least 2 choices.</p>
-          <p v-if="questionData.choices.length > 0 && !hasCorrectAnswer">Please mark at least one choice as correct.</p>
-        </div>
-  
-        <!-- List of Choices -->
-        <div v-for="(choice, index) in questionData.choices" :key="index" class="mb-4 p-4 border border-gray-200 rounded-md">
-          <div class="flex items-start gap-4">
-            <!-- Correct Choice Radio Button -->
-            <div class="mt-2">
-              <input 
-                :id="`choice-correct-${questionNumber}-${index}`" 
-                type="radio" 
-                :name="`question-${questionNumber}-correct`"
-                :checked="choice.isCorrect"
-                @change="setCorrectChoice(index)"
-                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
-              />
-            </div>
-            
-            <div class="flex-1">
-              <!-- Choice Text -->
-              <div class="mb-3">
-                <label :for="`choice-text-${questionNumber}-${index}`" class="block text-sm font-medium mb-1">
-                  Choice {{ index + 1 }} {{ choice.isCorrect ? '(Correct)' : '' }}
-                </label>
-                <input 
-                  :id="`choice-text-${questionNumber}-${index}`" 
-                  v-model="choice.text" 
-                  type="text" 
-                  required
-                  class="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-                  placeholder="Enter choice text"
-                />
-              </div>
-              
-              <!-- Choice Image -->
-              <div>
-                <label class="block text-sm font-medium mb-1">
-                  Choice Image (Optional)
-                </label>
-                
-                <div v-if="choiceImagePreviews[index]" class="mb-2">
-                  <div class="relative w-32">
-                    <img 
-                      :src="choiceImagePreviews[index]" 
-                      alt="Choice image preview" 
-                      class="h-24 w-32 object-cover rounded-md"
-                    />
-                    <button 
-                      type="button" 
-                      @click="removeChoiceImage(index)" 
-                      class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                
-                <input
-                  :id="`choice-image-${questionNumber}-${index}`"
-                  type="file"
-                  accept="image/*"
-                  @change="(e) => handleChoiceImageChange(index, e)"
-                  class="block w-full file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                />
-              </div>
-            </div>
-            
-            <!-- Remove Choice Button -->
+        <div 
+          v-for="(choice, index) in question.choices" 
+          :key="index"
+          class="flex items-start border border-gray-200 rounded-md p-3 mb-3"
+          :class="{ 'bg-green-50 border-green-200': choice.isCorrect }"
+        >
+          <!-- Correct choice indicator -->
+          <div class="flex-shrink-0 mr-3 mt-1">
             <button 
-              type="button" 
-              @click="removeChoice(index)" 
-              class="text-red-600 hover:text-red-800 focus:outline-none mt-2"
+              type="button"
+              @click="setCorrect(index)"
+              class="w-5 h-5 rounded-full border flex items-center justify-center"
+              :class="choice.isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <svg v-if="choice.isCorrect" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
               </svg>
             </button>
           </div>
+          
+          <div class="flex-1 space-y-3">
+            <!-- Choice Text -->
+            <input
+              type="text"
+              :value="choice.text"
+              @input="(e) => updateChoiceText(index, e)"
+              required
+              class="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
+              :class="{ 'border-green-300': choice.isCorrect }"
+              placeholder="Enter choice text..."
+            />
+            
+            <!-- Choice Image -->
+            <div>
+              <!-- Display existing image if available -->
+              <div v-if="choice.imageURL" class="mt-2 mb-2">
+                <div class="relative w-40">
+                  <img 
+                    :src="choice.imageURL" 
+                    alt="Choice image" 
+                    class="h-28 w-40 object-cover rounded-md"
+                  />
+                  <button 
+                    type="button" 
+                    @click="clearChoiceImage(index)"
+                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <input
+                type="file"
+                accept="image/*"
+                @change="(e) => handleChoiceImageChange(index, e)"
+                class="block w-full text-xs file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              />
+            </div>
+          </div>
+          
+          <!-- Remove Choice -->
+          <button 
+            type="button" 
+            @click="removeChoice(index)"
+            class="flex-shrink-0 ml-2 mt-1 text-red-500 hover:text-red-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         
-        <!-- Add Choice Button -->
         <button
           type="button"
           @click="addChoice"
-          class="mt-2 inline-flex items-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+          class="mt-2 inline-flex items-center text-sm text-indigo-600 hover:text-indigo-800"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
           Add Choice
         </button>
       </div>
     </div>
-  </template>
+  </div>
+</template>
