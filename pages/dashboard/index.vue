@@ -31,9 +31,9 @@ const block_meta = [
     link: '/profile'
   },
   {
-    title: 'กิจกรรมล่าสุด',
-    description: 'กิจกรรมล่าสุดจะแสดงที่นี่',
-    link: '/'
+    title: 'สร้างห้อง',
+    description: 'สร้างห้องเพื่อเชิญเพื่อนเข้าร่วม',
+    link: '/rooms'
   }
 ];
 

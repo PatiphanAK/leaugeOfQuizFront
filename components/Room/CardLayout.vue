@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import QuizCard from '~/components/Quiz/QuizCard.vue';
+import CardRoom from './CardRoom.vue';
 import type { Quiz } from '~/types/Quiz/quiz.interface';
 
 // Change the props definition to accept an array of Quiz objects
@@ -20,7 +20,7 @@ const props = defineProps<{
     <!-- Grid layout for quiz cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       <div v-for="quiz in quizzes" :key="quiz.ID">
-        <QuizCard :quiz="quiz" />
+        <CardRoom :quiz="quiz" />
       </div>
     </div>
   </div>
