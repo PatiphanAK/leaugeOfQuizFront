@@ -27,19 +27,19 @@ const question = computed({
 // Add a new choice
 const addChoice = () => {
   const newChoice: Choice = {
-    id: Math.floor(Math.random() * -1000), // Temporary negative ID for new choices
-    questionID: question.value.id || 0,
-    text: '',
-    isCorrect: false,
-    imageURL: '',
+    ID: Math.floor(Math.random() * -1000), // Temporary negative ID for new choices
+    QuestionID: question.value.ID || 0,
+    Text: '',
+    IsCorrect: false,
+    ImageURL: '',
   };
   
-  if (!question.value.choices) {
-    question.value.choices = [];
+  if (!question.value.Choices) {
+    question.value.Choices = [];
   }
   
   // Create a new array to ensure reactivity
-  const updatedChoices = [...question.value.choices, newChoice];
+  const updatedChoices = [...question.value.Choices, newChoice];
   
   emit('update:modelValue', {
     ...question.value,
@@ -49,9 +49,9 @@ const addChoice = () => {
 
 // Remove a choice
 const removeChoice = (index: number) => {
-  if (!question.value.choices) return;
+  if (!question.value.Choices) return;
   
-  const updatedChoices = [...question.value.choices];
+  const updatedChoices = [...question.value.Choices];
   updatedChoices.splice(index, 1);
   
   emit('update:modelValue', {
@@ -62,9 +62,9 @@ const removeChoice = (index: number) => {
 
 // Set a choice as correct
 const setCorrect = (index: number) => {
-  if (!question.value.choices) return;
+  if (!question.value.Choices) return;
   
-  const updatedChoices = question.value.choices.map((choice, i) => ({
+  const updatedChoices = question.value.Choices.map((choice, i) => ({
     ...choice,
     isCorrect: i === index
   }));
@@ -103,12 +103,12 @@ const handleChoiceImageChange = (choiceIndex: number, event: Event) => {
 // Handle choice text change
 const updateChoiceText = (index: number, event: Event) => {
   const target = event.target as HTMLInputElement;
-  if (!question.value.choices) return;
+  if (!question.value.Choices) return;
   
-  const updatedChoices = [...question.value.choices];
+  const updatedChoices = [...question.value.Choices];
   updatedChoices[index] = {
     ...updatedChoices[index],
-    text: target.value
+    Text: target.value
   };
   
   emit('update:modelValue', {
@@ -127,12 +127,12 @@ const clearQuestionImage = () => {
 
 // Clear choice image URL
 const clearChoiceImage = (choiceIndex: number) => {
-  if (!question.value.choices) return;
+  if (!question.value.Choices) return;
   
-  const updatedChoices = [...question.value.choices];
+  const updatedChoices = [...question.value.Choices];
   updatedChoices[choiceIndex] = {
     ...updatedChoices[choiceIndex],
-    imageURL: ''
+    ImageURL: ''
   };
   
   emit('update:modelValue', {
@@ -173,7 +173,7 @@ const clearChoiceImage = (choiceIndex: number) => {
         <input
           :id="`question-${questionNumber}`"
           type="text"
-          :value="question.text"
+          :value="question.Text"
           @input="updateQuestionText"
           required
           class="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
@@ -188,10 +188,10 @@ const clearChoiceImage = (choiceIndex: number) => {
         </label>
         
         <!-- Display existing image if available -->
-        <div v-if="question.imageURL" class="mt-2 mb-4">
+        <div v-if="question.ImageURL" class="mt-2 mb-4">
           <div class="relative w-56">
             <img 
-              :src="question.imageURL" 
+              :src="question.ImageURL" 
               alt="Question image" 
               class="h-40 w-56 object-cover rounded-md"
             />
@@ -220,15 +220,15 @@ const clearChoiceImage = (choiceIndex: number) => {
       <div>
         <label class="block text-sm font-medium mb-2">Answer Choices</label>
         
-        <div v-if="!question.choices || question.choices.length === 0" class="text-gray-500 text-sm mb-2">
+        <div v-if="!question.Choices || question.Choices.length === 0" class="text-gray-500 text-sm mb-2">
           No choices added yet.
         </div>
         
         <div 
-          v-for="(choice, index) in question.choices" 
+          v-for="(choice, index) in question.Choices" 
           :key="index"
           class="flex items-start border border-gray-200 rounded-md p-3 mb-3"
-          :class="{ 'bg-green-50 border-green-200': choice.isCorrect }"
+          :class="{ 'bg-green-50 border-green-200': choice.IsCorrect }"
         >
           <!-- Correct choice indicator -->
           <div class="flex-shrink-0 mr-3 mt-1">
@@ -236,9 +236,9 @@ const clearChoiceImage = (choiceIndex: number) => {
               type="button"
               @click="setCorrect(index)"
               class="w-5 h-5 rounded-full border flex items-center justify-center"
-              :class="choice.isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'"
+              :class="choice.IsCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'"
             >
-              <svg v-if="choice.isCorrect" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg v-if="choice.IsCorrect" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
               </svg>
             </button>
@@ -248,21 +248,21 @@ const clearChoiceImage = (choiceIndex: number) => {
             <!-- Choice Text -->
             <input
               type="text"
-              :value="choice.text"
+              :value="choice.Text"
               @input="(e) => updateChoiceText(index, e)"
               required
               class="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-              :class="{ 'border-green-300': choice.isCorrect }"
+              :class="{ 'border-green-300': choice.IsCorrect }"
               placeholder="Enter choice text..."
             />
             
             <!-- Choice Image -->
             <div>
               <!-- Display existing image if available -->
-              <div v-if="choice.imageURL" class="mt-2 mb-2">
+              <div v-if="choice.ImageURL" class="mt-2 mb-2">
                 <div class="relative w-40">
                   <img 
-                    :src="choice.imageURL" 
+                    :src="choice.ImageURL" 
                     alt="Choice image" 
                     class="h-28 w-40 object-cover rounded-md"
                   />

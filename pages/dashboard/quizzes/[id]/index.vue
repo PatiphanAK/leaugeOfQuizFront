@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import useQuiz from "~/composables/Quiz/useQuiz";
 import type { Quiz } from "@/types/Quiz/quiz.interface";
+import QuestionCard from '~/components/Quiz/QuestionCard.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -11,8 +12,12 @@ const quizAPI = useQuiz();
 const quiz = ref<Quiz | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
+// Removed the showAnswers ref since we want to show all answers all the time
 
-
+// Computed property to determine if the quiz has a cover image
+const hasCoverImage = computed(() => {
+  return quiz.value?.ImageURL && quiz.value.ImageURL.trim() !== '';
+});
 
 onMounted(async () => {
   if (!route.params.id) {
@@ -39,6 +44,7 @@ onMounted(async () => {
   }
 });
 
+// Navigation and action handlers
 const navigateToEdit = () => {
   router.push(`/dashboard/quizzes/${route.params.id}/edit`);
 };
@@ -64,6 +70,8 @@ const deleteQuizConfirm = async () => {
     }
   }
 };
+
+// Removed the toggleShowAnswers function since we don't need it anymore
 </script>
 
 <template>
@@ -85,32 +93,32 @@ const deleteQuizConfirm = async () => {
     </div>
     
     <!-- Quiz Display -->
-    <div v-else-if="quiz" class="bg-white shadow rounded-lg">
+    <div v-else-if="quiz" class="bg-white shadow rounded-lg overflow-hidden">
       <!-- Quiz Header with Image -->
-      <div class="relative">
-        <div v-if="quiz.ImageURL" class="w-full h-60 overflow-hidden rounded-t-lg">
+      <div class="relative" :class="{ 'h-60': hasCoverImage }">
+        <div v-if="hasCoverImage" class="w-full h-full">
           <img :src="quiz.ImageURL" alt="Quiz cover" class="w-full h-full object-cover" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
         </div>
         
-        <div class="p-6" :class="{ 'absolute bottom-0 text-white': quiz.ImageURL }">
+        <div class="p-6" :class="{ 'absolute bottom-0 w-full text-white': hasCoverImage }">
           <div class="flex justify-between items-start">
             <div>
               <h1 class="text-3xl font-bold">{{ quiz.Title }}</h1>
-              <div class="flex items-center mt-2">
-                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.ImageURL }">
+              <div class="flex items-center mt-2 flex-wrap gap-2">
+                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': hasCoverImage }">
                   {{ quiz.TimeLimit }} seconds
                 </span>
-                <span v-if="quiz.IsPublished" class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.ImageURL }">
+                <span v-if="quiz.IsPublished" class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': hasCoverImage }">
                   Published
                 </span>
-                <span v-else class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': quiz.ImageURL }">
+                <span v-else class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded" :class="{ 'bg-opacity-50': hasCoverImage }">
                   Draft
                 </span>
               </div>
             </div>
             
-            <div class="flex space-x-2">
+            <div class="flex flex-wrap gap-2">
               <button 
                 @click="navigateToEdit" 
                 class="inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700"
@@ -139,7 +147,7 @@ const deleteQuizConfirm = async () => {
         <!-- Description -->
         <div class="mb-8">
           <h2 class="text-lg font-medium mb-2">Description</h2>
-          <p class="text-gray-700">{{ quiz.Description }}</p>
+          <p class="text-gray-700">{{ quiz.Description || 'No description provided.' }}</p>
         </div>
         
         <!-- Categories -->
@@ -156,55 +164,22 @@ const deleteQuizConfirm = async () => {
           </div>
         </div>
         
-        <!-- Questions Preview -->
-        <div class="mb-8">
-          <h2 class="text-lg font-medium mb-4">Questions ({{ quiz.Questions ? quiz.Questions.length : 0 }})</h2>
-          
-          <div v-if="quiz.Questions && quiz.Questions.length > 0">
-            <div v-for="(question, questionIndex) in quiz.Questions" :key="question.id" class="mb-6 border border-gray-200 rounded-lg p-4">
-              <div class="flex items-start">
-                <div class="bg-indigo-100 text-indigo-800 rounded-full h-6 w-6 flex items-center justify-center mr-3 mt-1">
-                  {{ questionIndex + 1 }}
-                </div>
-                <div class="flex-1">
-                  <h3 class="font-medium mb-2">{{ question.text }}</h3>
-                  
-                  <!-- Question Image -->
-                  <div v-if="question.imageURL" class="mb-3">
-                    <img :src="question.imageURL" alt="Question image" class="h-40 object-contain rounded-md" />
-                  </div>
-                  
-                  <!-- Choices -->
-                  <ul v-if="question.choices && question.choices.length > 0" class="space-y-2">
-                    <li 
-                      v-for="(choice, choiceIndex) in question.choices" 
-                      :key="choice.id" 
-                      class="flex items-start p-2 rounded-md" 
-                      :class="{ 'bg-green-50 border border-green-200': choice.isCorrect }"
-                    >
-                      <div class="flex-shrink-0 mr-2">
-                        <div class="w-5 h-5 rounded-full border flex items-center justify-center" :class="choice.isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'">
-                          <svg v-if="choice.isCorrect" xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </div>
-                      </div>
-                      <div class="flex-1">
-                        <span :class="{ 'font-medium': choice.isCorrect }">{{ choice.text }}</span>
-                        
-                        <!-- Choice Image -->
-                        <div v-if="choice.imageURL" class="mt-2">
-                          <img :src="choice.imageURL" alt="Choice image" class="h-24 object-contain rounded-md" />
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+        <!-- Questions Section -->
+        <div v-if="quiz.Questions && quiz.Questions.length > 0" class="mb-8">
+          <div class="mb-4">
+            <h2 class="text-lg font-medium">Questions ({{ quiz.Questions.length }})</h2>
           </div>
           
-          <p v-else class="text-gray-500">No questions added to this quiz yet.</p>
+          <!-- Pass questions to QuestionCard with showCorrectAnswers set to false -->
+          <QuestionCard 
+            :questions="quiz.Questions" 
+            :showCorrectAnswers="false"
+          />
+        </div>
+        
+        <!-- No Questions Message -->
+        <div v-else class="mb-8 p-4 bg-yellow-50 text-yellow-700 rounded-md">
+          <p>This quiz doesn't have any questions yet. Click the Edit button to add questions.</p>
         </div>
       </div>
     </div>

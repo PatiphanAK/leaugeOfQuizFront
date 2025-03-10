@@ -13,19 +13,19 @@ export interface Quiz {
 }
 
 export interface Question {
-    id: number;
-    quizID: number;
-    text: string;
-    imageURL: string;
-    choices: Choice[];
+    ID: number;
+    QuizID: number;
+    Text: string;
+    ImageURL: string;
+    Choices: Choice[];
 }
 
 export interface Choice {
-    id: number;
-    questionID: number;
-    text: string;
-    imageURL: string;
-    isCorrect: boolean;
+    ID: number;
+    QuestionID: number;
+    Text: string;
+    ImageURL: string;
+    IsCorrect: boolean;
 }
 
 export interface Category {
