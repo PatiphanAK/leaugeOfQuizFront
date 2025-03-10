@@ -73,11 +73,11 @@ const fetchQuiz = async (quizId: number) => {
     // Ensure all questions and choices have the required fields
     quizData.value.Questions = quizData.value.Questions.map(question => ({
       ...question,
-      text: question.text || '', 
-      choices: (question.choices || []).map(choice => ({
+      text: question.Text || '', 
+      choices: (question.Choices || []).map(choice => ({
         ...choice,
-        text: choice.text || '',
-        isCorrect: choice.isCorrect !== undefined ? choice.isCorrect : false
+        text: choice.Text || '',
+        isCorrect: choice.IsCorrect !== undefined ? choice.IsCorrect : false
       }))
     }));
     
@@ -103,8 +103,8 @@ const initializeImageArrays = () => {
       questionImages.value.push(null);
       
       const choiceImageArray: (File | null)[] = [];
-      if (question.choices) {
-        question.choices.forEach(() => {
+      if (question.Choices) {
+        question.Choices.forEach(() => {
           // Initialize choice image as null
           choiceImageArray.push(null);
         });
@@ -118,11 +118,11 @@ const initializeImageArrays = () => {
 // Question management
 const addQuestion = () => {
   const newQuestion: Question = {
-    id: Math.floor(Math.random() * -1000), // Temporary negative ID for new questions
-    quizID: quizData.value.ID || 0,
-    text: '',
-    imageURL: '',
-    choices: []
+    ID: Math.floor(Math.random() * -1000), // Temporary negative ID for new questions
+    QuizID: quizData.value.ID || 0,
+    Text: '',
+    ImageURL: '',
+    Choices: []
   };
   
   quizData.value.Questions.push(newQuestion);
@@ -175,10 +175,10 @@ const submitForm = async () => {
       isPublished: quizData.value.IsPublished,
       categories: quizData.value.Categories.map(cat => cat.ID).filter(id => id > 0),
       questions: quizData.value.Questions.map(question => ({
-        text: question.text,
-        choices: question.choices.map(choice => ({
-          text: choice.text,
-          isCorrect: choice.isCorrect
+        text: question.Text,
+        choices: question.Choices.map(choice => ({
+          text: choice.Text,
+          isCorrect: choice.IsCorrect
         }))
       }))
     };
@@ -390,7 +390,7 @@ const cancel = () => {
           
           <QuestionForm
             v-for="(question, index) in quizData.Questions"
-            :key="question.id || index"
+            :key="question.ID || index"
             v-model="quizData.Questions[index]"
             :question-number="index + 1"
             :question-image="questionImages[index]"
