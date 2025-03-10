@@ -43,7 +43,7 @@ const addChoice = () => {
   
   emit('update:modelValue', {
     ...question.value,
-    choices: updatedChoices
+    Choices: updatedChoices // Changed from 'choices' to 'Choices'
   });
 };
 
@@ -56,7 +56,7 @@ const removeChoice = (index: number) => {
   
   emit('update:modelValue', {
     ...question.value,
-    choices: updatedChoices
+    Choices: updatedChoices // Changed from 'choices' to 'Choices'
   });
 };
 
@@ -66,12 +66,12 @@ const setCorrect = (index: number) => {
   
   const updatedChoices = question.value.Choices.map((choice, i) => ({
     ...choice,
-    isCorrect: i === index
+    IsCorrect: i === index // Changed from 'isCorrect' to 'IsCorrect'
   }));
   
   emit('update:modelValue', {
     ...question.value,
-    choices: updatedChoices
+    Choices: updatedChoices // Changed from 'choices' to 'Choices'
   });
 };
 
@@ -80,7 +80,7 @@ const updateQuestionText = (event: Event) => {
   const target = event.target as HTMLInputElement;
   emit('update:modelValue', {
     ...question.value,
-    text: target.value
+    Text: target.value // Changed from 'text' to 'Text'
   });
 };
 
@@ -113,7 +113,7 @@ const updateChoiceText = (index: number, event: Event) => {
   
   emit('update:modelValue', {
     ...question.value,
-    choices: updatedChoices
+    Choices: updatedChoices // Changed from 'choices' to 'Choices'
   });
 };
 
@@ -121,7 +121,7 @@ const updateChoiceText = (index: number, event: Event) => {
 const clearQuestionImage = () => {
   emit('update:modelValue', {
     ...question.value,
-    imageURL: ''
+    ImageURL: ''
   });
 };
 
@@ -137,7 +137,7 @@ const clearChoiceImage = (choiceIndex: number) => {
   
   emit('update:modelValue', {
     ...question.value,
-    choices: updatedChoices
+    Choices: updatedChoices // Changed from 'choices' to 'Choices'
   });
 };
 </script>

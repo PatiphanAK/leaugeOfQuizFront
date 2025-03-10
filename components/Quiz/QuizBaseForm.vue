@@ -70,7 +70,9 @@ const fetchQuiz = async (quizId: number) => {
     console.log("Quiz fetched successfully:", fetchedQuiz);
     quizData.value = fetchedQuiz;
     
-    // Ensure all questions and choices have the required fields
+    // IMPORTANT: Remove this transformation that's causing property name mismatch
+    // No need to transform Text -> text and Choices -> choices
+    /*
     quizData.value.Questions = quizData.value.Questions.map(question => ({
       ...question,
       text: question.Text || '', 
@@ -80,6 +82,7 @@ const fetchQuiz = async (quizId: number) => {
         isCorrect: choice.IsCorrect !== undefined ? choice.IsCorrect : false
       }))
     }));
+    */
     
     // Initialize arrays for question and choice images after quiz data is set
     initializeImageArrays();
@@ -270,6 +273,8 @@ const cancel = () => {
       
       <!-- Form -->
       <form v-else @submit.prevent="submitForm" class="space-y-6">
+        <!-- ... The rest of the template remains unchanged ... -->
+        
         <!-- Basic Information -->
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
