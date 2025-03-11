@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue';
 import QuizLayout from '~/components/Quiz/QuizLayout.vue';
 import useQuiz from '~/composables/Quiz/useQuiz';
+import SearchBar from '~/components/Base/SearchBar.vue';
 import Pagination from '~/components/Base/Pagination.vue';
 import type { Quiz } from '~/types/Quiz/quiz.interface';
 
@@ -22,12 +23,12 @@ const fetchQuizzes = async () => {
   try {
     const response = await quiz.fetchQuizAll({
       limit: 10,
-      page: (currentPage.value - 1) * 10, // Correct offset calculation
+      page: (currentPage.value - 1) * 10,
       search: searchTerm.value
     });
     
     quizzes.value = response.data;
-    totalPages.value = Math.ceil(response.meta.total / 10); // Calculate total pages
+    totalPages.value = Math.ceil(response.meta.total / 10);
   } catch (err) {
     error.value = 'Failed to load quizzes. Please try again later.';
     console.error('Error fetching quizzes:', err);

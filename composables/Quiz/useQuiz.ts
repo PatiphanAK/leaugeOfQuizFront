@@ -120,6 +120,7 @@ export default function useQuiz() {
         // Use JSON approach if there are no files
         response = await api.createQuiz(quizData);
       }
+      console.log('Response:', response);
       return response;
     } catch (err) {
       error.value = 'Failed to create quiz';
@@ -138,7 +139,6 @@ export default function useQuiz() {
       const response = await api.updateQuiz(id, quizData);
       return response;
     } catch (err) {
-      error.value = 'Failed to update quiz';
       console.error('Failed to update quiz:', err);
       return null;
     } finally {

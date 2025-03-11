@@ -5,6 +5,7 @@ import { useAuth } from '~/composables/Auth/useAuth';
 import LoginButton from '~/components/Base/LoginButton.vue';
 import ProfileMenu from '~/components/Base/ProfileMenu.vue';
 
+
 const authStore = useAuthStore();
 const { loginWithGoogle, logout } = useAuth();
 

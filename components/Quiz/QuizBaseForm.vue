@@ -4,10 +4,13 @@ import { useRouter, useRoute } from 'vue-router';
 import useQuiz from "~/composables/Quiz/useQuiz";
 import type { Quiz, Question, Choice, Category } from "@/types/Quiz/quiz.interface";
 import QuestionForm from '@/components/Quiz/QuestionForm.vue';
+import { Helper } from '@/utils/helper';
+
 
 const router = useRouter();
 const route = useRoute();
 const quizAPI = useQuiz();
+const helper = new Helper();
 
 // State management
 const isLoading = ref(false);
@@ -69,21 +72,6 @@ const fetchQuiz = async (quizId: number) => {
   if (fetchedQuiz) {
     console.log("Quiz fetched successfully:", fetchedQuiz);
     quizData.value = fetchedQuiz;
-    
-    // IMPORTANT: Remove this transformation that's causing property name mismatch
-    // No need to transform Text -> text and Choices -> choices
-    /*
-    quizData.value.Questions = quizData.value.Questions.map(question => ({
-      ...question,
-      text: question.Text || '', 
-      choices: (question.Choices || []).map(choice => ({
-        ...choice,
-        text: choice.Text || '',
-        isCorrect: choice.IsCorrect !== undefined ? choice.IsCorrect : false
-      }))
-    }));
-    */
-    
     // Initialize arrays for question and choice images after quiz data is set
     initializeImageArrays();
   } else {
@@ -168,73 +156,75 @@ const updateChoiceImage = (questionIndex: number, choiceIndex: number, image: Fi
 // Form submission
 const submitForm = async () => {
   isLoading.value = true;
+  error.value = null; 
+  let result: Quiz | null = null;
   
   try {
-    // Prepare quiz data
-    const formattedQuizData = {
-      title: quizData.value.Title,
-      description: quizData.value.Description,
-      timeLimit: quizData.value.TimeLimit,
-      isPublished: quizData.value.IsPublished,
-      categories: quizData.value.Categories.map(cat => cat.ID).filter(id => id > 0),
-      questions: quizData.value.Questions.map(question => ({
-        text: question.Text,
-        choices: question.Choices.map(choice => ({
-          text: choice.Text,
-          isCorrect: choice.IsCorrect
-        }))
-      }))
-    };
-    
-    // Correctly structure file data
-    const files: {
-      quizImage?: File; 
-      questionImages?: File[];
-      choiceImages?: Array<Array<File | null>>;
-    } = {};
-    
-    // Add quiz image if exists
-    if (quizImage.value) {
-      files.quizImage = quizImage.value;
-    }
-    
-    // Add question images if any exist
-    const validQuestionImages = questionImages.value.filter(img => img !== null) as File[];
-    if (validQuestionImages.length > 0) {
-      files.questionImages = validQuestionImages;
-    }
-    
-    // Add choice images - maintaining the nested structure
-    if (choiceImages.value.length > 0) {
-      files.choiceImages = choiceImages.value;
-    }
-    
-    console.log("Formatted Quiz Data:", formattedQuizData);
-    console.log("Files:", files);
-    
-    let result;
-    
     if (isEditMode.value) {
-      // Update existing quiz
+
       const quizId = Number(route.params.id);
-      console.log("Updating quiz with ID:", quizId);
-      result = await quizAPI.updateQuiz(quizId, quizData.value);
-    } else {
-      // Create new quiz
-      console.log("Creating new quiz");
+      if (isNaN(quizId) || quizId <= 0) {
+        throw new Error("Invalid quiz ID");
+      }
+      
+      const quizDataToUpdate: Partial<Quiz> = {
+        Title: quizData.value.Title || '',
+        Description: quizData.value.Description || '',
+        TimeLimit: quizData.value.TimeLimit || 30,
+        IsPublished: quizData.value.IsPublished || false,
+        Categories: [...(quizData.value.Categories || [])],
+        Questions: [...(quizData.value.Questions || [])]
+      };
+      
+      result = await quizAPI.updateQuiz(quizId, quizDataToUpdate);
+    } else {  
+      // Prepare quiz data for creation
+      const formattedQuizData = {
+        title: quizData.value.Title || '',
+        description: quizData.value.Description || '',
+        timeLimit: quizData.value.TimeLimit || 30,
+        isPublished: quizData.value.IsPublished || false,
+        categories: (quizData.value.Categories || [])
+          .map(cat => cat?.ID)
+          .filter(id => id && id > 0),
+        questions: (quizData.value.Questions || []).map(question => ({
+          text: question.Text || '',
+          choices: (question.Choices || []).map(choice => ({
+            text: choice.Text || '',
+            isCorrect: !!choice.IsCorrect
+          }))
+        }))
+      };
+      
+      const files: {
+        quizImage?: File; 
+        questionImages?: File[];
+        choiceImages?: Array<Array<File | null>>;
+      } = {};
+      
+      if (quizImage.value) {
+        files.quizImage = quizImage.value;
+      }
+      
+      const validQuestionImages = questionImages.value.filter(img => img !== null) as File[];
+      if (validQuestionImages.length > 0) {
+        files.questionImages = validQuestionImages;
+      }
+      
+      if (choiceImages.value.length > 0) {
+        files.choiceImages = choiceImages.value;
+      }
+      
       result = await quizAPI.createQuiz(formattedQuizData, files);
     }
     
     if (result) {
-      // Navigate to quiz list on success
-      console.log("Quiz saved successfully:", result);
       router.push('/dashboard/quizzes');
     } else {
-      error.value = "Failed to save quiz";
-      console.error("Failed to save quiz - no result returned");
+      error.value = "Failed to save quiz - no response from server";
     }
-  } catch (err) {
-    error.value = "Error submitting quiz";
+  } catch (err: any) {
+    error.value = err?.message || "Error submitting quiz";
     console.error('Error submitting quiz:', err);
   } finally {
     isLoading.value = false;
@@ -325,8 +315,8 @@ const cancel = () => {
           <div v-if="quizData.ImageURL" class="mt-2 mb-4">
             <div class="relative w-56">
               <img 
-                :src="quizData.ImageURL" 
-                alt="Quiz image" 
+                :src="helper.getHttp(quizData.ImageURL)" 
+                alt="Quiz image"
                 class="h-40 w-56 object-cover rounded-md"
               />
               <button 
