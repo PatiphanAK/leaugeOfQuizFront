@@ -42,7 +42,7 @@ const sidebarItems = [
 const emit = defineEmits(['close-mobile-menu']);
 
 const closeSidebarOnMobile = () => {
-  if (window.innerWidth < 640) { // sm breakpoint is typically 640px
+  if (window.innerWidth < 640) {
     emit('close-mobile-menu');
   }
 };

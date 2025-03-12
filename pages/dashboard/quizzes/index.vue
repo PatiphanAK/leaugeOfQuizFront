@@ -5,7 +5,7 @@ import useQuiz from '~/composables/Quiz/useQuiz';
 import SearchBar from '~/components/Base/SearchBar.vue';
 import Pagination from '~/components/Base/Pagination.vue';
 import type { Quiz } from '~/types/Quiz/quiz.interface';
-import Sidebar from '~/components/Base/Sidebar.vue';
+
 
 const quiz = useQuiz();
 const currentPage = ref(1);
@@ -67,7 +67,7 @@ onMounted(() => {
 });
 
 definePageMeta({
-  layout: "dashboard-layout",
+  layout: 'dashboardlayout',
 });
 
 </script>
