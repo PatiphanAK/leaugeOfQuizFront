@@ -1,153 +1,3 @@
-<script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import useQuiz from "~/composables/Quiz/useQuiz";
-import type { CreateUpdateQuizData, Category } from "@/types/Quiz/quiz.interface";
-import { Helper } from '@/utils/helper';
-
-const quiz = useQuiz();
-const router = useRouter();
-const route = useRoute();
-const helper = new Helper();
-
-const isLoading = ref(false);
-const error = ref('');
-const isEditMode = computed(() => route.params.id !== undefined);
-const categories = ref<Category[]>([]);
-
-const quizData = ref<CreateUpdateQuizData>({
-  Title: '',
-  Description: '',
-  TimeLimit: 0,
-  Categories: [],
-  IsPublished: false,
-  ImageURL: ''
-});
-
-// Handle file upload for quiz image
-const handleQuizImageChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files.length > 0) {
-    const file = input.files[0];
-    quizData.value.ImageURL = file; // Store the file object directly
-  }
-};
-
-// Computed property for image preview
-const imagePreview = computed(() => {
-  if (!quizData.value.ImageURL) return "";
-  if (typeof quizData.value.ImageURL === "string") {
-    return quizData.value.ImageURL;
-  }
-  // Handle File object
-  return URL.createObjectURL(quizData.value.ImageURL as File);
-});
-
-// Initialize quiz data by fetching categories and quiz details if in edit mode
-async function initializeQuizData() {
-  isLoading.value = true;
-  error.value = '';
-  
-  try {
-    // Fetch categories
-    const categoriesResponse = await quiz.fetchCategories();
-    if (categoriesResponse) {
-      categories.value = categoriesResponse;
-    }
-    
-    // If in edit mode, fetch the quiz data
-    if (isEditMode.value && route.params.id) {
-      const quizId = Number(route.params.id);
-      if (!isNaN(quizId)) {
-        const quizResponse = await quiz.fetchQuizById(quizId);
-        console.log("Quiz Response:", quizResponse); // Debug log
-        // Check if response exists and has the expected structure
-        if (quizResponse && quizResponse.data) {
-            quizData.value = {
-              Title: quizResponse.data.Title || '',
-              Description: quizResponse.data.Description || '',
-              TimeLimit: quizResponse.data.TimeLimit || 0,
-              Categories: quizResponse.data.Categories.map((category: any) => typeof category === 'number' ? { ID: category, Name: '', description: '' } : category) || [],
-              IsPublished: quizResponse.data.IsPublished || false,
-              ImageURL: quizResponse.data.ImageURL || ''
-            };
-        } else {
-          console.error("Error is ",error);
-        }
-      } else {
-        console.error("Quiz response is empty or undefined");
-        error.value = "Could not find quiz data";
-      }
-    } else {
-      error.value = 'Invalid quiz ID';
-    }
-  } catch (err) {
-    console.error('Error fetching quiz data:', err);
-    error.value = 'Failed to fetch quiz data. Please try again.';
-  } finally {
-    isLoading.value = false;
-  }
-} 
-
-
-// Validate form before submission
-const validateForm = () => {
-  let isValid = true;
-  error.value = '';
-  
-  if (!quizData.value.Title.trim()) {
-    error.value = 'Quiz title is required';
-    isValid = false;
-  } else if (quizData.value.TimeLimit <= 0) {
-    error.value = 'Time limit must be greater than 0';
-    isValid = false;
-  }
-  
-  return isValid;
-};
-
-// Submit form handler
-const submitForm = async () => {
-  if (!validateForm()) return;
-  
-  isLoading.value = true;
-  error.value = '';
-  
-  try {
-    const formData = helper.createFormDataFromObject(quizData.value);
-    
-    if (isEditMode.value && route.params.id) {
-      // Update existing quiz
-      const quizId = Number(route.params.id);
-      if (!isNaN(quizId)) {
-        await quiz.updateQuiz(quizId, formData);
-      } else {
-        throw new Error('Invalid quiz ID');
-      }
-    } else {
-      // Create new quiz
-      await quiz.createQuiz(formData);
-    }
-    cancel();
-  } catch (err) {
-    console.error('Error saving quiz:', err);
-    error.value = 'Failed to save quiz. Please try again.';
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Cancel form and go back
-const cancel = () => {
-  router.back();
-};
-
-// Call initializeQuizData during setup
-onMounted(() => {
-  initializeQuizData();
-});
-</script>
-
 <template>
   <div class="container mx-auto p-4">
     <div class="bg-white shadow rounded-lg p-6">
@@ -311,3 +161,160 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import useQuiz from "@/composables/Quiz/useQuiz";
+import type { CreateUpdateQuizData, Category } from "@/types/Quiz/quiz.interface";
+import { Helper } from '@/utils/helper';
+
+const quiz = useQuiz();
+const router = useRouter();
+const route = useRoute();
+const helper = new Helper();
+
+const isLoading = ref(false);
+const error = ref('');
+const isEditMode = computed(() => route.params.id !== undefined);
+const categories = ref<Category[]>([]);
+
+const quizData = ref<CreateUpdateQuizData>({
+  Title: '',
+  Description: '',
+  TimeLimit: 0,
+  Categories: [],
+  IsPublished: false,
+  ImageURL: ''
+});
+
+// Handle file upload for quiz image
+const handleQuizImageChange = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0];
+    quizData.value.ImageURL = file; // Store the file object directly
+  }
+};
+
+// Computed property for image preview
+const imagePreview = computed(() => {
+  if (!quizData.value.ImageURL) return "";
+  if (typeof quizData.value.ImageURL === "string") {
+    return quizData.value.ImageURL;
+  }
+  // Handle File object
+  return URL.createObjectURL(quizData.value.ImageURL as File);
+});
+
+// Initialize quiz data by fetching categories and quiz details if in edit mode
+async function initializeQuizData() {
+  isLoading.value = true;
+  error.value = '';
+  
+  try {
+    // Fetch categories
+    const categoriesResponse = await quiz.fetchCategories();
+    if (categoriesResponse) {
+      categories.value = categoriesResponse;
+    }
+    
+    // If in edit mode, fetch the quiz data
+    if (isEditMode.value && route.params.id) {
+      const quizId = Number(route.params.id);
+      if (!isNaN(quizId)) {
+        const quizResponse = await quiz.fetchQuizById(quizId);
+        if (quizResponse) {
+          quizData.value = {
+            Title: quizResponse.Title || '',
+            Description: quizResponse.Description || '',
+            TimeLimit: quizResponse.TimeLimit || 0,
+            Categories: quizResponse.Categories?.map((category: any) => 
+              typeof category === 'number' ? { ID: category, Name: '', description: '' } : category
+            ) || [],
+            IsPublished: quizResponse.IsPublished || false,
+            ImageURL: quizResponse.ImageURL || ''
+          };
+        } else {
+          error.value = 'Could not find quiz data';
+        }
+      } else {
+        error.value = 'Invalid quiz ID';
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching quiz data:', err);
+    error.value = 'Failed to fetch quiz data. Please try again.';
+  } finally {
+    isLoading.value = false;
+  }
+} 
+
+// Validate form before submission
+const validateForm = () => {
+  let isValid = true;
+  error.value = '';
+  
+  if (!quizData.value.Title.trim()) {
+    error.value = 'Quiz title is required';
+    isValid = false;
+  } else if (quizData.value.TimeLimit <= 0) {
+    error.value = 'Time limit must be greater than 0';
+    isValid = false;
+  }
+  
+  return isValid;
+};
+
+// Submit form handler
+const submitForm = async () => {
+  if (!validateForm()) return;
+  
+  isLoading.value = true;
+  error.value = '';
+  
+  try {
+    const formData = new FormData();
+
+    const quizDataForAPI = {
+      Title: quizData.value.Title,
+      Description: quizData.value.Description || '',
+      TimeLimit: quizData.value.TimeLimit || 0,
+      IsPublished: quizData.value.IsPublished,
+      Categories: quizData.value.Categories || [],
+      ImageURL: quizData.value.ImageURL || null
+    };
+    
+    if (isEditMode.value && route.params.id) {
+      // Update existing quiz
+      const quizId = Number(route.params.id);
+      if (!isNaN(quizId)) {
+        await quiz.updateQuiz(quizId, quizDataForAPI);
+      } else {
+        throw new Error('Invalid quiz ID');
+      }
+    } else {
+      // Create new quiz
+      await quiz.createQuiz(quizDataForAPI);
+    }
+    
+    // Redirect back after successful submission
+    cancel();
+  } catch (err) {
+    console.error('Error saving quiz:', err);
+    error.value = 'Failed to save quiz. Please try again.';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Cancel form and go back
+const cancel = () => {
+  router.back();
+};
+
+// Call initializeQuizData when component is mounted
+onMounted(() => {
+  initializeQuizData();
+});
+</script>

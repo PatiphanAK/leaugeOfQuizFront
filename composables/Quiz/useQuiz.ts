@@ -2,9 +2,7 @@ import { ref } from 'vue';
 import type { 
   Quiz, 
   Category, 
-  Question,
   CreateUpdateQuizData,
-  CreateUpdateQuestionData,
 } from "~/types/Quiz/quiz.interface";
 import QuizAPI, { type QuizParams, type PaginationResult } from "~/api/Quiz/quiz.api";
 

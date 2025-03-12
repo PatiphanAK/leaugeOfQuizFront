@@ -1,11 +1,10 @@
 export interface Quiz {
-    data: CreateUpdateQuizData | { Title: string; Description: string; TimeLimit: number; IsPublished: boolean; Categories: number[]; ImageURL?: string | { readonly lastModified: number; readonly name: string; readonly webkitRelativePath: string; readonly size: number; readonly type: string; arrayBuffer: { (): Promise<ArrayBuffer>; (): Promise<ArrayBuffer>; }; bytes: { (): Promise<Uint8Array>; (): Promise<Uint8Array>; }; slice: { (start?: number, end?: number, contentType?: string): Blob; (start?: number, end?: number, contentType?: string): Blob; }; stream: { (): ReadableStream<Uint8Array>; (): ReadableStream<Uint8Array>; }; text: { (): Promise<string>; (): Promise<string>; }; } | undefined; };
     ID: number;
     Title: string;
     Description: string;
     TimeLimit: number;
     IsPublished: boolean;
-    ImageURL: string;
+    ImageURL?: string;
     CreatorID: number;
     CreatedAt: string;
     UpdatedAt: string;
