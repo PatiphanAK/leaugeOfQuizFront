@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type { Question } from '~/types/Quiz/quiz.interface';
+
 const props = withDefaults(defineProps<{
     questions: Question[];
     showCorrectAnswers?: boolean;

@@ -22,7 +22,7 @@ const fetchQuizzes = async () => {
   error.value = '';
   
   try {
-    const response = await quiz.fetchQuizAll({
+    const response = await quiz.fetchMyQuizzes({
       limit: 10,
       page: (currentPage.value - 1) * 10,
       search: searchTerm.value

@@ -1,5 +1,11 @@
 import { ref } from 'vue';
-import type { Quiz, Question, Choice, Category } from "~/types/Quiz/quiz.interface";
+import type { 
+  Quiz, 
+  Category, 
+  Question,
+  CreateUpdateQuizData,
+  CreateUpdateQuestionData,
+} from "~/types/Quiz/quiz.interface";
 import QuizAPI, { type QuizParams, type PaginationResult } from "~/api/Quiz/quiz.api";
 
 export default function useQuiz() {
@@ -87,122 +93,66 @@ export default function useQuiz() {
     }
   };
 
-  const createQuiz = async (
-    quizData: {
-      title: string;
-      description: string;
-      timeLimit: number;
-      isPublished: boolean;
-      categories: number[];
-      questions: Array<{
-        text: string;
-        choices: Array<{
-          text: string;
-          isCorrect: boolean;
-        }>
-      }>
-    },
-    files?: {
-      quizImage?: File;
-      questionImages?: File[];
-      choiceImages?: Array<Array<File | null>>;
-    }
-  ): Promise<Quiz | null> => {
+  const createQuiz = async (params: CreateUpdateQuizData | FormData): Promise<Quiz | null> => {
     loading.value = true;
     error.value = null;
-    
+
     try {
-      let response;
-      if (files && (files.quizImage || files.questionImages || files.choiceImages)) {
-        // Use FormData approach if there are files
-        response = await api.createQuizWithForm(quizData, files);
-      } else {
-        // Use JSON approach if there are no files
-        response = await api.createQuiz(quizData);
-      }
+      const response = await api.createQuiz(params as CreateUpdateQuizData);
       return response;
     } catch (err) {
-      error.value = 'Failed to create quiz';
-      console.error('Failed to create quiz:', err);
+      console.error(err);
       return null;
     } finally {
       loading.value = false;
     }
   };
-  
-  const updateQuiz = async (id: number, quizData: Partial<Quiz>): Promise<Quiz | null> => {
+
+  const updateQuiz = async (id: number, params: CreateUpdateQuizData | FormData): Promise<Quiz | null> => {
     loading.value = true;
     error.value = null;
-    
+
     try {
-      const response = await api.updateQuiz(id, quizData);
+      const response = await api.updateQuiz(id, params as CreateUpdateQuizData);
       return response;
-    } catch (err) {
-      console.error('Failed to update quiz:', err);
+    }
+    catch (err) {
+      console.error(err);
       return null;
     } finally {
       loading.value = false;
     }
   };
-  
   const deleteQuiz = async (id: number): Promise<boolean> => {
     loading.value = true;
     error.value = null;
-    
+
     try {
       const response = await api.deleteQuiz(id);
       return response;
-    } catch (err) {
-      error.value = 'Failed to delete quiz';
-      console.error('Failed to delete quiz:', err);
+    }
+    catch (err) {
+      console.error(err);
       return false;
-    } finally {
+    }
+    finally {
       loading.value = false;
     }
   };
-
-  const uploadFile = async (file: File, type: 'quiz' | 'question' | 'choice', oldFileURL?: string): Promise<string | null> => {
-    loading.value = true;
-    error.value = null;
-    
-    try {
-      const response = await api.uploadFile(file, type, oldFileURL);
-      return response;
-    } catch (err) {
-      error.value = 'Failed to upload file';
-      console.error('Failed to upload file:', err);
-      return null;
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  const deleteFile = async (filename: string, type: 'quiz' | 'question' | 'choice'): Promise<boolean> => {
-    loading.value = true;
-    error.value = null;
-    
-    try {
-      const response = await api.deleteFile(filename, type);
-      return response;
-    } catch (err) {
-      error.value = 'Failed to delete file';
-      console.error('Failed to delete file:', err);
-      return false;
-    } finally {
-      loading.value = false;
-    }
-  };
-  
   return {
+    // Quiz operations
     fetchQuizAll,
     fetchQuizById,
     fetchMyQuizzes,
-    fetchCategories,
     createQuiz,
     updateQuiz,
     deleteQuiz,
-    uploadFile,
-    deleteFile,
+
+    // Category operations
+    fetchCategories,
+    
+    
+    // State
     loading,
     error,
     categories

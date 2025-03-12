@@ -1,5 +1,5 @@
-import type { Quiz, Question, Choice, Category } from "~/types/Quiz/quiz.interface";
-import { objectToFormData } from "@/utils/formData"
+import type { Quiz, Category, CreateUpdateQuizData } from "~/types/Quiz/quiz.interface";
+import  { Helper} from "~/utils/helper";
 import axios from 'axios';
 
 export interface QuizParams {
@@ -20,6 +20,7 @@ export interface PaginationResult<T> {
 }
 
 const BASE_URL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+const helper = new Helper();
 
 export default function QuizAPI() {
   const api = axios.create({
@@ -29,10 +30,6 @@ export default function QuizAPI() {
       'Accept': 'application/json',
     }
   });
-
-  /**
-   * สร้าง query params จากพารามิเตอร์
-   */
   const buildQueryParams = (params: QuizParams): Record<string, any> => {
     const queryParams: Record<string, any> = {};
     
@@ -135,158 +132,53 @@ export default function QuizAPI() {
         return [];
       }
     },
-
-    // Create a new quiz with FormData
-    createQuizWithForm: async (quizData: {
-      title: string;
-      description: string;
-      timeLimit: number;
-      isPublished: boolean;
-      categories: number[];
-      questions: Array<{
-        text: string;
-        choices: Array<{
-          text: string;
-          isCorrect: boolean;
-        }>
-      }>
-    }, files: {
-      quizImage?: File;
-      questionImages?: File[];
-      choiceImages?: Array<Array<File | null>>;
-    }): Promise<Quiz | null> => {
+    createQuiz: async(params: CreateUpdateQuizData): Promise<Quiz | null> => {
       try {
-        const formData = new FormData();
-        
-        // Add quiz data as JSON string
-        formData.append('quizData', JSON.stringify(quizData));
-        
-        // Add quiz image if exists
-        if (files.quizImage) {
-          formData.append('quizImage', files.quizImage);
-        }
-        
-        // Add question images if exist
-        if (files.questionImages) {
-          files.questionImages.forEach((image, i) => {
-            if (image) {
-              formData.append(`questionImage_${i}`, image);
-            }
-          });
-        }
-        
-        // Add choice images if exist
-        if (files.choiceImages) {
-          files.choiceImages.forEach((choiceImageRow, i) => {
-            choiceImageRow.forEach((image, j) => {
-              if (image) {
-                formData.append(`choiceImage_${i}_${j}`, image);
-              }
-            });
-          });
-        }
-        
-        const response = await api.post('/api/v1/quizzes/form', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+        // แปลง object เป็น FormData ด้วยฟังก์ชัน helper
+        const formData = helper.createFormDataFromObject({
+          title: params.Title,
+          description: params.Description,
+          timeLimit: params.TimeLimit,
+          isPublished: params.IsPublished,
+          categories: params.Categories,
+          imageURL: params.ImageURL || null
         });
         
+        const response = await api.post('/api/v1/quizzes', formData);
         return response.data.data || null;
-      } catch (error) {
+      }
+      catch (error) {
         console.error('Failed to create quiz:', error);
         return null;
       }
     },
-
-    // Create a new quiz with JSON
-    createQuiz: async (quizData: {
-      title: string;
-      description: string;
-      timeLimit: number;
-      isPublished: boolean;
-      imageURL?: string;
-      categories: number[];
-      questions: Array<{
-        text: string;
-        imageURL?: string;
-        choices: Array<{
-          text: string;
-          imageURL?: string;
-          isCorrect: boolean;
-        }>
-      }>
-    }): Promise<Quiz | null> => {
+    
+    updateQuiz: async (id: number, params: CreateUpdateQuizData): Promise<Quiz | null> => {
       try {
-        const response = await api.post('/api/v1/quizzes', quizData, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+        // ใช้ฟังก์ชันเดียวกันกับที่ใช้ใน createQuiz
+        const formData = helper.createFormDataFromObject({
+          title: params.Title,
+          description: params.Description,
+          timeLimit: params.TimeLimit,
+          isPublished: params.IsPublished,
+          categories: params.Categories,
+          imageURL: params.ImageURL || null
         });
         
-        return response.data.data || null;
-      } catch (error) {
-        console.error('Failed to create quiz:', error);
-        return null;
-      }
-    },
-
-    // Update an existing quiz
-    updateQuiz: async (id: number, quizData: Partial<Quiz>): Promise<Quiz | null> => {
-      try {
-        const response = await api.patch(`/api/v1/quizzes/${id}`, quizData, {
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        });
+        const response = await api.patch(`/api/v1/quizzes/${id}`, formData);
         return response.data.data || null;
       } catch (error) {
         console.error('Failed to update quiz:', error);
         return null;
       }
     },
-
-    // Delete a quiz
     deleteQuiz: async (id: number): Promise<boolean> => {
       try {
         const response = await api.delete(`/api/v1/quizzes/${id}`);
-        return response.data.message?.includes('success') || false;
-      } catch (error) {
+        return response.status === 204;
+      }
+      catch (error) {
         console.error('Failed to delete quiz:', error);
-        return false;
-      }
-    },
-
-    // Upload a file (for separate file uploads)
-    uploadFile: async (file: File, type: 'quiz' | 'question' | 'choice', oldFileURL?: string): Promise<string | null> => {
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        if (oldFileURL) {
-          formData.append('old_file_url', oldFileURL);
-        }
-        
-        const response = await api.post(`/api/upload/${type}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        
-        return response.data.url || null;
-      } catch (error) {
-        console.error(`Failed to upload ${type} file:`, error);
-        return null;
-      }
-    },
-    
-    // Delete a file
-    deleteFile: async (filename: string, type: 'quiz' | 'question' | 'choice'): Promise<boolean> => {
-      try {
-        const response = await api.delete(`/api/upload/${type}/${filename}`);
-        return response.data.message?.includes('success') || false;
-      } catch (error) {
-        console.error(`Failed to delete ${type} file:`, error);
         return false;
       }
     }
