@@ -61,16 +61,14 @@ onMounted(async () => {
 // Fetch categories
 const fetchCategories = async () => {
   categories.value = await quizAPI.fetchCategories();
-  console.log("Categories fetched:", categories.value);
+
 };
 
 // Fetch quiz details in edit mode
 const fetchQuiz = async (quizId: number) => {
-  console.log("Fetching quiz with ID:", quizId);
   const fetchedQuiz = await quizAPI.fetchQuizById(quizId);
   
   if (fetchedQuiz) {
-    console.log("Quiz fetched successfully:", fetchedQuiz);
     quizData.value = fetchedQuiz;
     // Initialize arrays for question and choice images after quiz data is set
     initializeImageArrays();

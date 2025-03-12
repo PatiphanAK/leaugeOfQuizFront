@@ -120,7 +120,6 @@ export default function useQuiz() {
         // Use JSON approach if there are no files
         response = await api.createQuiz(quizData);
       }
-      console.log('Response:', response);
       return response;
     } catch (err) {
       error.value = 'Failed to create quiz';

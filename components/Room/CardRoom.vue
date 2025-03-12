@@ -3,8 +3,10 @@ import type { Quiz } from '~/types/Quiz/quiz.interface';
 import { computed } from 'vue';
 import { NuxtLink } from '#components';
 import { useRoute } from 'vue-router';
+import { Helper } from '~/utils/helper';
 
 const route = useRoute();
+const helper = new Helper();
 
 const props = defineProps<{
   quiz: Quiz
@@ -20,7 +22,7 @@ const truncatedDescription = computed(() => {
 
 // ตรวจสอบรูปภาพ (fallback ถ้าไม่มี)
 const imageUrl = computed(() => {
-  return props.quiz.ImageURL || 'https://picsum.photos/seed/' + props.quiz.ID + '/400/250';
+  return helper.getHttp(props.quiz.ImageURL) || 'https://picsum.photos/seed/' + props.quiz.ID + '/400/250';
 });
 </script>
 
@@ -57,7 +59,7 @@ const imageUrl = computed(() => {
           :to="`${route.path}/${quiz.ID}`" 
           class="inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-colors duration-200"
         >
-          เริ่มเล่น
+          สร้างห้อง
           <svg class="rtl:rotate-180 w-3.5 h-3.5 ms-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
           </svg>

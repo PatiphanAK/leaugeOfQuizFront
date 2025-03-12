@@ -34,7 +34,6 @@ onMounted(async () => {
     
     if (result) {
       quiz.value = result;
-      console.log("Quiz loaded for detail view:", quiz.value);
     } else {
       error.value = 'Quiz not found';
     }

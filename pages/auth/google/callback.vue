@@ -17,7 +17,6 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 onMounted(async () => {
-  console.log('Callback page mounted - current route:', window.location.pathname);
   try {
     // Prevent any navigation away from this page during authentication
     const currentPath = window.location.pathname;
@@ -45,7 +44,6 @@ onMounted(async () => {
       let redirectPath = '/dashboard'; // กำหนดค่าเริ่มต้นเป็น /dashboard
       
       const savedRedirect = sessionStorage.getItem('auth_redirect');
-      console.log('Saved redirect path:', savedRedirect);
       
       if (savedRedirect && savedRedirect !== 'null' && savedRedirect !== 'undefined') {
         // ตรวจสอบว่า redirect URL ถูกต้อง
@@ -62,12 +60,9 @@ onMounted(async () => {
         sessionStorage.removeItem('auth_redirect');
       }
       
-      console.log('Redirecting to:', redirectPath);
-      
       // ใช้ navigateTo แทน router.push เพื่อให้ทำงานกับ Nuxt routing ได้ดีขึ้น
       // ใช้ await และ replace: true เพื่อให้แน่ใจว่าการนำทางทำงานอย่างถูกต้อง
       // ใช้ window.location.href แทน navigateTo เพื่อหลีกเลี่ยงปัญหากับ middleware
-      console.log('Using direct location redirect to:', redirectPath);
       setTimeout(() => {
         window.location.href = redirectPath;
       }, 100);
