@@ -67,7 +67,9 @@ onMounted(() => {
 });
 
 definePageMeta({
-  layout: 'dashboardlayout',
+  layout: 'dashboard-layout',
+  title: 'Quizzes',
+  useLayoutProps: true
 });
 
 </script>
