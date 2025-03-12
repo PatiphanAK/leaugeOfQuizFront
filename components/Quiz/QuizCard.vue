@@ -15,7 +15,7 @@ const props = defineProps<{
 <template>
   <div class="max-w-sm bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
     <a href="#">
-      <img class="rounded-t-lg w-full h-48 object-cover" :src="helper.getHttp(quiz.ImageURL) || 'https://picsum.photos/200/300?grayscale'" :alt="quiz.Title" />
+      <img class="rounded-t-lg w-full h-48 object-cover" :src="helper.getHttp(quiz.ImageURL ?? null) || 'https://picsum.photos/200/300?grayscale'" :alt="quiz.Title" />
     </a>
     <div class="p-5">
       <NuxtLink :to="`${route.path}/${quiz.ID}`">

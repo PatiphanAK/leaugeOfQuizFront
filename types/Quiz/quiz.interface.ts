@@ -9,6 +9,7 @@ export interface Quiz {
     CreatedAt: string;
     UpdatedAt: string;
     Categories: Category[];
+    Questions: Question[];
 }
 
 export interface Question {

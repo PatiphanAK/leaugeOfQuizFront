@@ -98,7 +98,7 @@ const deleteQuizConfirm = async () => {
       <!-- Quiz Header with Image -->
       <div class="relative" :class="{ 'h-60': hasCoverImage }">
         <div v-if="hasCoverImage" class="w-full h-full">
-          <img :src="helper.getHttp(quiz.ImageURL)" alt="Quiz cover" class="w-full h-full object-cover" />
+          <img :src="helper.getHttp(quiz.ImageURL ?? null)" alt="Quiz cover" class="w-full h-full object-cover" />
           <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
         </div>
         
