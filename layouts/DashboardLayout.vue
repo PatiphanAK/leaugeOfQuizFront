@@ -1,3 +1,20 @@
+<script setup>
+  import { ref } from "vue";
+  import Sidebar from '~/components/Base/Sidebar.vue';
+
+  const isSidebarOpen = ref(true);
+  
+  const toggleSidebar = () => {
+    isSidebarOpen.value = !isSidebarOpen.value;
+  };
+  
+
+  console.log('Sidebar mounted')
+  const closeMobileMenu = () => {
+    isSidebarOpen.value = false;
+  };
+</script>
+
 <template>
     <div class="dashboard-layout flex min-h-screen bg-gray-100 dark:bg-gray-900">
       <!-- Sidebar -->
@@ -38,19 +55,7 @@
         </main>
       </div>
     </div>
-  </template>
+</template>
   
-  <script setup>
-  import { ref } from "vue";
-  
-  const isSidebarOpen = ref(true);
-  
-  const toggleSidebar = () => {
-    isSidebarOpen.value = !isSidebarOpen.value;
-  };
-  
-  const closeMobileMenu = () => {
-    isSidebarOpen.value = false;
-  };
-  </script>
+
   

@@ -5,7 +5,7 @@ const props = defineProps({
     default: false
   }
 });
-
+console.log("Hello Sidebar");
 const sidebarItems = [
   {
     name: 'แดชบอร์ด',
