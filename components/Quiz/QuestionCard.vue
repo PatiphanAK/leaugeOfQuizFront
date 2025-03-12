@@ -1,18 +1,7 @@
 <script lang="ts" setup>
+import type { Question } from '~/types/Quiz/quiz.interface';
 const props = withDefaults(defineProps<{
-    questions: {
-        ID: number;
-        QuizID: number;
-        Text: string;
-        ImageURL: string | null;
-        Choices: { 
-            ID: number; 
-            QuestionID: number;
-            Text: string; 
-            ImageURL?: string;
-            IsCorrect: boolean;
-        }[];
-    }[];
+    questions: Question[];
     showCorrectAnswers?: boolean;
 }>(), {
     showCorrectAnswers: false

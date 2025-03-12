@@ -215,12 +215,6 @@ const submitForm = async () => {
       
       result = await quizAPI.createQuiz(formattedQuizData, files);
     }
-    
-    if (result) {
-      router.push('/dashboard/quizzes');
-    } else {
-      error.value = "Failed to save quiz - no response from server";
-    }
   } catch (err: any) {
     error.value = err?.message || "Error submitting quiz";
     console.error('Error submitting quiz:', err);
