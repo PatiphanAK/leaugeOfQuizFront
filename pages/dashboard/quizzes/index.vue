@@ -5,6 +5,7 @@ import useQuiz from '~/composables/Quiz/useQuiz';
 import SearchBar from '~/components/Base/SearchBar.vue';
 import Pagination from '~/components/Base/Pagination.vue';
 import type { Quiz } from '~/types/Quiz/quiz.interface';
+import Sidebar from '~/components/Base/Sidebar.vue';
 
 const quiz = useQuiz();
 const currentPage = ref(1);
@@ -64,13 +65,18 @@ watch(currentPage, () => {
 onMounted(() => {
   fetchQuizzes();
 });
+
+definePageMeta({
+  layout: 'dashboard'
+});
+
 </script>
 
 <template>
   <div class="quiz-index-container min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
     <div class="container mx-auto">
       <h1 class="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">Quiz Collection</h1>
-      
+      <Sidebar />
       <!-- Search Bar Component -->
       <div class="mb-8">
         <SearchBar @search="handleSearch" />

@@ -6,7 +6,7 @@ import Block from '~/components/Dashboard/Block.vue';
 
 definePageMeta({
   middleware: ['auth-middleware'],
-  layout: 'dashboardlayout',
+  layout: 'dashboard',
 });
 
 const authStore = useAuthStore();
