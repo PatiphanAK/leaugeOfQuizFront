@@ -61,34 +61,34 @@ async function initializeQuizData() {
       if (!isNaN(quizId)) {
         const quizResponse = await quiz.fetchQuizById(quizId);
         console.log("Quiz Response:", quizResponse); // Debug log
-        
         // Check if response exists and has the expected structure
-        if (quizResponse) {
-          // Directly assign quiz data without checking for .data property
-          // This assumes fetchQuizById returns the quiz object directly
-          quizData.value = {
-            Title: quizResponse.Title || '',
-            Description: quizResponse.Description || '',
-            TimeLimit: quizResponse.TimeLimit || 0,
-            Categories: quizResponse.Categories || [],
-            IsPublished: quizResponse.IsPublished || false,
-            ImageURL: quizResponse.ImageURL || ''
-          };
+        if (quizResponse && quizResponse.data) {
+            quizData.value = {
+              Title: quizResponse.data.Title || '',
+              Description: quizResponse.data.Description || '',
+              TimeLimit: quizResponse.data.TimeLimit || 0,
+              Categories: quizResponse.data.Categories.map((category: any) => typeof category === 'number' ? { ID: category, Name: '', description: '' } : category) || [],
+              IsPublished: quizResponse.data.IsPublished || false,
+              ImageURL: quizResponse.data.ImageURL || ''
+            };
         } else {
-          console.error("Quiz response is empty or undefined");
-          error.value = "Could not find quiz data";
+          console.error("Error is ",error);
         }
       } else {
-        error.value = 'Invalid quiz ID';
+        console.error("Quiz response is empty or undefined");
+        error.value = "Could not find quiz data";
       }
+    } else {
+      error.value = 'Invalid quiz ID';
     }
   } catch (err) {
-    console.error('Error initializing quiz data:', err);
-    error.value = 'Failed to load quiz data. Please try again.';
+    console.error('Error fetching quiz data:', err);
+    error.value = 'Failed to fetch quiz data. Please try again.';
   } finally {
     isLoading.value = false;
   }
-}
+} 
+
 
 // Validate form before submission
 const validateForm = () => {
