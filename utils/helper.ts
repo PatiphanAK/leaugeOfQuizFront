@@ -56,3 +56,4 @@ createFormDataFromObject(data: Record<string, any>): FormData {
   return formData;
 }
 }
+export default new Helper();

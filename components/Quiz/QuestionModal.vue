@@ -2,7 +2,7 @@
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useQuestionModalStore } from '~/stores/Question/questionModal';
 import type { CreateUpdateQuestionData, CreateUpdateChoiceData } from '~/types/Question/question.interface';
-import { useQuestion } from "@/composables/Question/question";
+import useQuestion from '~/composables/Question/useQuestion';
 
 const questionAPI = useQuestion();
 const modalStore = useQuestionModalStore();
