@@ -3,8 +3,10 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import useQuiz from "~/composables/Quiz/useQuiz";
 import type { Quiz } from "@/types/Quiz/quiz.interface";
-import QuestionCard from '~/components/Quiz/QuestionCard.vue';
 import { Helper } from '@/utils/helper';
+import QuestionCard from '~/components/Quiz/QuestionCard.vue';
+import { useQuestionModalStore } from '~/stores/Question/questionModal';
+
 
 const route = useRoute();
 const router = useRouter();
@@ -14,13 +16,17 @@ const helper = new Helper();
 const quiz = ref<Quiz | null>(null);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
-// Removed the showAnswers ref since we want to show all answers all the time
+const isToggleQuestion = ref(false);
 
-// Computed property to determine if the quiz has a cover image
+const { openDialog } = useQuestionModalStore();
+
 const hasCoverImage = computed(() => {
   return quiz.value?.ImageURL && quiz.value.ImageURL.trim() !== '';
 });
 
+const toggleQuestionModal = () => {
+  isToggleQuestion.value = !isToggleQuestion.value;
+};
 onMounted(async () => {
   if (!route.params.id) {
     router.push('/dashboard/quizzes');
@@ -71,8 +77,6 @@ const deleteQuizConfirm = async () => {
     }
   }
 };
-
-// Removed the toggleShowAnswers function since we don't need it anymore
 </script>
 
 <template>
@@ -164,20 +168,26 @@ const deleteQuizConfirm = async () => {
             </span>
           </div>
         </div>
+        <!---- Question Modal -->
+        <button 
+        type="button"
+        @click="openDialog(null)" 
+        class="text-white bg-gradient-to-br from-green-400 to-blue-600 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-green-200 dark:focus:ring-green-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+        Add Question
+        </button>
+
         
         <!-- Questions Section -->
         <div v-if="quiz.Questions && quiz.Questions.length > 0" class="mb-8">
           <div class="mb-4">
             <h2 class="text-lg font-medium">Questions ({{ quiz.Questions.length }})</h2>
           </div>
-          
           <!-- Pass questions to QuestionCard with showCorrectAnswers set to false -->
           <QuestionCard 
             :questions="quiz.Questions" 
             :showCorrectAnswers="false"
           />
         </div>
-        
         <!-- No Questions Message -->
         <div v-else class="mb-8 p-4 bg-yellow-50 text-yellow-700 rounded-md">
           <p>This quiz doesn't have any questions yet. Click the Edit button to add questions.</p>
