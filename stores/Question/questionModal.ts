@@ -1,20 +1,45 @@
-import {defineStore} from 'pinia'
+import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { Question } from '~/types/Quiz/quiz.interface'
 
 export const useQuestionModalStore = defineStore('questionModal', () => {
-    const isToggleQuestionModal = ref(false);
-    const selectedQuestion = ref(null);
+    // State
+    const isToggleQuestion = ref(false); // Renamed to match component usage
+    const currentQuestion = ref<Question | null>(null); // Renamed to match component usage
+    const quizId = ref<number | null>(null); // Added missing state
 
+    // Methods
+    const toggleQuestionModal = (state: boolean) => {
+        isToggleQuestion.value = state;
+    };
+
+    const setCurrentQuestion = (question: Question | null) => {
+        currentQuestion.value = question;
+    };
+
+    const setQuizId = (id: number) => {
+        quizId.value = id;
+    };
+
+    // Keep the original methods for backward compatibility
     const openDialog = (id = null) => {
-        selectedQuestion.value = id
-        isToggleQuestionModal.value = true
+        currentQuestion.value = id;
+        isToggleQuestion.value = true;
     };
 
     const closeDialog = () => {
-        selectedQuestion.value = null
-        isToggleQuestionModal.value = false
+        currentQuestion.value = null;
+        isToggleQuestion.value = false;
     };
 
-    return { isToggleQuestionModal, selectedQuestion, openDialog, closeDialog};
-}
-);
+    return { 
+        isToggleQuestion, 
+        currentQuestion, 
+        quizId,
+        toggleQuestionModal,
+        setCurrentQuestion,
+        setQuizId,
+        openDialog, 
+        closeDialog
+    };
+});

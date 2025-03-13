@@ -3,12 +3,15 @@ import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useQuestionModalStore } from '~/stores/Question/questionModal';
 import type { CreateUpdateQuestionData, CreateUpdateChoiceData } from '~/types/Question/question.interface';
 import useQuestion from '~/composables/Question/useQuestion';
+import { useRoute } from 'vue-router';
 
 const questionAPI = useQuestion();
 const modalStore = useQuestionModalStore();
 const isToggle = computed(() => modalStore.isToggleQuestion);
 const editingQuestion = computed(() => modalStore.currentQuestion);
 const quizId = computed(() => modalStore.quizId);
+
+const route = useRoute();
 
 const loading = ref(false);
 const error = ref('');
@@ -166,7 +169,9 @@ async function submitForm() {
     if (editingQuestion.value && editingQuestion.value.id) {
       await questionAPI.updateQuestion(editingQuestion.value.id, formData);
     } else {
-      await questionAPI.createQuestion(formData);
+       await questionAPI.createQuestion(Number(quizId.value),formData);
+       console.log(formData)
+       
     }
     
     // Close modal and refresh questions

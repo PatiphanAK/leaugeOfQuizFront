@@ -102,11 +102,41 @@ definePageMeta({
       
       <!-- Quiz Details -->
       <div v-else-if="quizData">
-        <div class="flex justify-between items-center mb-8">
-          <div>
+        <div class="flex flex-col md:flex-row justify-between items-start gap-6 mb-8">
+          <div class="w-full md:w-3/5">
             <h1 class="text-3xl font-bold text-gray-800 dark:text-white">{{ quizData.Title }}</h1>
             <p class="text-gray-600 dark:text-gray-400 mt-2">{{ quizData.Description }}</p>
             <img :src="helper.getHttp(quizData.ImageURL)" alt="Quiz Image" class="mt-4 rounded-lg shadow-md w-full max-w-md">
+          </div>
+
+          <div class="w-full md:w-2/5 flex flex-col gap-4 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white">Quiz Information</h2>
+            <div class="flex flex-col gap-2">
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Time Limit:</span>
+                <span class="font-medium">{{ quizData.TimeLimit }} secound</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Status:</span>
+                <span class="font-medium">{{ quizData.IsPublished ? 'Published' : 'Draft' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">Created:</span>
+                <span class="font-medium">{{ new Date(quizData.CreatedAt).toLocaleDateString() }}</span>
+              </div>
+              <div class="flex justify-between">
+                <button>
+                  <NuxtLink :to="`${route.path}/edit`" class="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2">
+                    Edit Quiz
+                  </NuxtLink>
+                </button>
+                <button class="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-red-200 via-red-300 to-yellow-200 group-hover:from-red-200 group-hover:via-red-300 group-hover:to-yellow-200 dark:text-white dark:hover:text-gray-900 focus:ring-4 focus:outline-none focus:ring-red-100 dark:focus:ring-red-400">
+                  <span class="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                    Delete Quiz
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         

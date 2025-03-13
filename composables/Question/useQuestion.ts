@@ -13,12 +13,12 @@ export default function useQuestion() {
     error.value = null;
   };
   
-  const createQuestion = async (quizId : number,data: CreateUpdateQuestionData) => {
+  const createQuestion = async (quizId : number,data: CreateUpdateQuestionData | FormData) => {
     loading.value = true;
     error.value = null;
     
     try {
-      const result = await questionApi.CreateQuestion(quizId,data);
+      const result = await questionApi.CreateQuestion(quizId,data as CreateUpdateQuestionData);
       question.value = result;
       return result;
     } catch (err) {
@@ -28,12 +28,12 @@ export default function useQuestion() {
     }
   };
   
-  const updateQuestion = async (id: number, data: CreateUpdateQuestionData) => {
+  const updateQuestion = async (id: number, data: CreateUpdateQuestionData | FormData) => {
     loading.value = true;
     error.value = null;
     
     try {
-      const result = await questionApi.UpdateQuestion(id, data);
+      const result = await questionApi.UpdateQuestion(id, data as CreateUpdateQuestionData);
       question.value = result;
       return result;
     } catch (err) {

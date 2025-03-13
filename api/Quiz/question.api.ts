@@ -17,7 +17,7 @@ export default function QuestionAPI() {
   return {
     CreateQuestion: async (quizId: number,data: CreateUpdateQuestionData) => {
       try {
-        const response = await api.post(`/quizzes/${quizId}/questions/`);
+        const response = await api.post(`/api/v1/quizzes/${quizId}/questions/`, data);
         return response.data;
       } catch (error) {
         throw (error);
@@ -26,7 +26,7 @@ export default function QuestionAPI() {
     
     UpdateQuestion: async (id: number, data: CreateUpdateQuestionData) => {
       try {
-        const response = await api.put(`/questions/${id}`, data);
+        const response = await api.put(`/api/v1/questions/${id}`, data);
         return response.data;
       } catch (error) {
         throw (error);
@@ -35,7 +35,7 @@ export default function QuestionAPI() {
     
     DeleteQuestion: async (quizId : number,id: number) => {
       try {
-        const response = await api.delete(`/quizzes/${quizId}/questions/${id}`);
+        const response = await api.delete(`/api/v1/quizzes/${quizId}/questions/${id}`);
         return response.data;
       } catch (error) {
         throw (error);
@@ -44,7 +44,7 @@ export default function QuestionAPI() {
     
     GetQuestion: async (quizId : number,id: number) => {
       try {
-        const response = await api.get(`/quizzes/${quizId}/questions/${id}`);
+        const response = await api.get(`/api/v1/quizzes/${quizId}/questions/${id}`);
         return response.data;
       } catch (error) {
         throw (error);
@@ -53,7 +53,7 @@ export default function QuestionAPI() {
     
     GetQuestions: async (quizId: number) => {
       try {
-        const response = await api.get(`/quizzes/${quizId}/questions`);
+        const response = await api.get(`/api/v1/quizzes/${quizId}/questions`);
         return response.data;
       } catch (error) {
         throw (error);
