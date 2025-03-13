@@ -38,7 +38,6 @@ const fetchQuizDetails = async () => {
 
 // Open modal to create a new question
 const openCreateQuestionModal = () => {
-  console.log("Hello")
   modalStore.setQuizId(quizId);
   modalStore.setCurrentQuestion(null);
   modalStore.toggleQuestionModal(true);

@@ -13,16 +13,25 @@ export default function useQuestion() {
     error.value = null;
   };
   
-  const createQuestion = async (quizId : number,data: CreateUpdateQuestionData | FormData) => {
+  const createQuestion = async (data: CreateUpdateQuestionData | FormData) => {
     loading.value = true;
     error.value = null;
     
     try {
-      const result = await questionApi.CreateQuestion(quizId,data as CreateUpdateQuestionData);
+      let quizId: number;
+      
+      if (data instanceof FormData) {
+        const quizIdValue = data.get('quizId');
+        quizId = quizIdValue ? parseInt(quizIdValue.toString()) : 0;
+      } else {
+        quizId = data.QuizID;
+      }
+      
+      const result = await questionApi.CreateQuestion(quizId, data);
       question.value = result;
       return result;
     } catch (err) {
-        throw (err);
+      throw (err);
     } finally {
       loading.value = false;
     }
@@ -33,17 +42,17 @@ export default function useQuestion() {
     error.value = null;
     
     try {
-      const result = await questionApi.UpdateQuestion(id, data as CreateUpdateQuestionData);
+      const result = await questionApi.UpdateQuestion(id, data);
       question.value = result;
       return result;
     } catch (err) {
-        throw (err);
+      throw (err);
     } finally {
       loading.value = false;
     }
   };
   
-  const deleteQuestion = async (quizId : number, id: number) => {
+  const deleteQuestion = async (quizId: number, id: number) => {
     loading.value = true;
     error.value = null;
     
@@ -57,13 +66,13 @@ export default function useQuestion() {
       
       return result;
     } catch (err) {
-        throw (err);
+      throw (err);
     } finally {
       loading.value = false;
     }
   };
   
-  const getQuestion = async (quizId : number, id: number) => {
+  const getQuestion = async (quizId: number, id: number) => {
     loading.value = true;
     error.value = null;
     
@@ -72,7 +81,7 @@ export default function useQuestion() {
       question.value = result;
       return result;
     } catch (err) {
-        throw (err);
+      throw (err);
     } finally {
       loading.value = false;
     }
@@ -87,7 +96,7 @@ export default function useQuestion() {
       questions.value = result;
       return result;
     } catch (err) {
-        throw (err);
+      throw (err);
     } finally {
       loading.value = false;
     }

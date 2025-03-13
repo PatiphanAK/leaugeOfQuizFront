@@ -9,10 +9,9 @@ const questionAPI = useQuestion();
 const modalStore = useQuestionModalStore();
 const isToggle = computed(() => modalStore.isToggleQuestion);
 const editingQuestion = computed(() => modalStore.currentQuestion);
-const quizId = computed(() => modalStore.quizId);
-
 const route = useRoute();
 
+const quizId = route.params.id;
 const loading = ref(false);
 const error = ref('');
 const questionText = ref('');
@@ -40,7 +39,6 @@ const isValid = computed(() => {
   
   return hasCorrectAnswer && allChoicesHaveText;
 });
-
 // Watch for changes in the modal visibility
 watch(isToggle, (newValue) => {
   if (newValue) {
@@ -159,18 +157,16 @@ async function submitForm() {
   error.value = '';
   
   try {
-    const formData: CreateUpdateQuestionData = {
-      QuizID: quizId.value,
-      Text: questionText.value,
-      ImageURL: questionImage.value || undefined,
-      Choices: choices.value
-    };
-    
+    const questionData = new FormData();
+    questionData.append('quizId', quizId);
+    questionData.append('image', questionImage.value || '');
+    questionData.append('text', questionText.value);
+    console.log(questionData)
     if (editingQuestion.value && editingQuestion.value.id) {
-      await questionAPI.updateQuestion(editingQuestion.value.id, formData);
+      await questionAPI.updateQuestion(editingQuestion.value.id, questionData);
     } else {
-       await questionAPI.createQuestion(Number(quizId.value),formData);
-       console.log(formData)
+       await questionAPI.createQuestion(Number(quizId),questionData);
+       console.log(questionData)
        
     }
     
@@ -197,7 +193,7 @@ function cancelForm() {
         {{ editingQuestion ? 'Edit Question' : 'Add New Question' }}
       </h2>
       
-      <form @submit.prevent="submitForm" class="space-y-6">
+      <form @submit.prevent="submitForm()" class="space-y-6">
         <!-- Question Text -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Question Text *</label>
