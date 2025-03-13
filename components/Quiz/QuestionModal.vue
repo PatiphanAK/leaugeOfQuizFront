@@ -158,23 +158,51 @@ async function submitForm() {
   
   try {
     const questionData = new FormData();
-    questionData.append('quizId', quizId);
-    questionData.append('image', questionImage.value || '');
+    // Add quizId to the FormData
+    questionData.append('quizId', quizId.toString());
+    
+    // Add question text
     questionData.append('text', questionText.value);
-    console.log(questionData)
+    
+    // Add question image if exists
+    if (questionImage.value instanceof File) {
+      questionData.append('image', questionImage.value);
+    } else if (typeof questionImage.value === 'string' && questionImage.value) {
+      // Handle existing image URL case for editing
+      questionData.append('imageUrl', questionImage.value);
+    }
+    
+    // Add choices to FormData
+    choices.value.forEach((choice, index) => {
+      questionData.append(`choices[${index}][Text]`, choice.Text);
+      questionData.append(`choices[${index}][IsCorrect]`, choice.IsCorrect.toString());
+      
+      // Add choice image if it exists
+      if (choice.ImageURL instanceof File) {
+        questionData.append(`choices[${index}][ImageURL]`, choice.ImageURL);
+      } else if (typeof choice.ImageURL === 'string' && choice.ImageURL) {
+        questionData.append(`choices[${index}][ImageURL]`, choice.ImageURL);
+      }
+    });
+    
+    // For debugging
+    console.log("Submitting FormData:");
+    for (const pair of questionData.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
+    }
+    
     if (editingQuestion.value && editingQuestion.value.id) {
       await questionAPI.updateQuestion(editingQuestion.value.id, questionData);
     } else {
-       await questionAPI.createQuestion(Number(quizId),questionData);
-       console.log(questionData)
-       
+      // Just pass the FormData - quizId is already inside it
+      await questionAPI.createQuestion(questionData);
     }
     
     // Close modal and refresh questions
     modalStore.toggleQuestionModal(false);
-    // You might want to add a method to refresh the questions list in the parent component
   } catch (err: any) {
     error.value = err.message || 'Failed to save question';
+    console.error(err);
   } finally {
     loading.value = false;
   }
