@@ -65,7 +65,7 @@ export default function QuestionAPI() {
           quizId = quizIdValue ? parseInt(quizIdValue.toString()) : 0;
         }
         
-        const response = await api.put(`/quizzes/${quizId}/questions/${id}`, formData, {
+        const response = await api.patch(`/quizzes/${quizId}/questions/${id}`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }

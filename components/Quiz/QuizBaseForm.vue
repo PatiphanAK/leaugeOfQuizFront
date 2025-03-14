@@ -167,12 +167,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import useQuiz from "@/composables/Quiz/useQuiz";
 import type { CreateUpdateQuizData, Category } from "@/types/Quiz/quiz.interface";
-import { Helper } from '@/utils/helper';
+import helper from '~/utils/helper';
 
 const quiz = useQuiz();
 const router = useRouter();
 const route = useRoute();
-const helper = new Helper();
+
 
 const isLoading = ref(false);
 const error = ref('');

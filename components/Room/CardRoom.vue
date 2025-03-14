@@ -3,10 +3,10 @@ import type { Quiz } from '~/types/Quiz/quiz.interface';
 import { computed } from 'vue';
 import { NuxtLink } from '#components';
 import { useRoute } from 'vue-router';
-import { Helper } from '~/utils/helper';
+import helper from '~/utils/helper';
 
 const route = useRoute();
-const helper = new Helper();
+
 
 const props = defineProps<{
   quiz: Quiz

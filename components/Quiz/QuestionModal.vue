@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue';
 import { useQuestionModalStore } from '~/stores/Question/questionModal';
-import type { CreateUpdateQuestionData, CreateUpdateChoiceData } from '~/types/Question/question.interface';
+import type { CreateUpdateQuestionData, CreateUpdateChoiceData } from '~/types/Quiz/quiz.interface';
 import useQuestion from '~/composables/Question/useQuestion';
 import { useRoute } from 'vue-router';
 
@@ -17,6 +17,9 @@ const error = ref('');
 const questionText = ref('');
 const questionImage = ref<File | string | null>(null);
 const previewQuestionImage = ref('');
+const previewQuestionImageUrl = computed(() =>
+  helper.getHttp(previewQuestionImage.value)
+);
 const choices = ref<CreateUpdateChoiceData[]>([
   { Text: '', ImageURL: undefined, IsCorrect: false },
   { Text: '', ImageURL: undefined, IsCorrect: false }
@@ -158,35 +161,31 @@ async function submitForm() {
   
   try {
     const questionData = new FormData();
-    questionData.append('quizId', quizId.toString());
-    questionData.append('text', questionText.value);
+    const jsonData = {
+      quizId: parseInt(quizId.toString()),
+      text: questionText.value,
+      choices: choices.value.map(choice => ({
+        id: choice.ID ? choice.ID.toString() : undefined,
+        text: choice.Text,
+        isCorrect: choice.IsCorrect,
+      }))
+    };
+    
+    if (editingQuestion.value && editingQuestion.value.ID) {
+      jsonData.questionId = editingQuestion.value.ID;
+    }
+    questionData.append('questionData', JSON.stringify(jsonData));
     if (questionImage.value instanceof File) {
       questionData.append('image', questionImage.value);
-    } else if (typeof questionImage.value === 'string' && questionImage.value) {
-      questionData.append('imageUrl', questionImage.value);
     }
-    
-    // Add choices to FormData
     choices.value.forEach((choice, index) => {
-      questionData.append(`choices[${index}][Text]`, choice.Text);
-      questionData.append(`choices[${index}][IsCorrect]`, choice.IsCorrect.toString());
-      
-      // Add choice image if it exists
       if (choice.ImageURL instanceof File) {
-        questionData.append(`choices[${index}][ImageURL]`, choice.ImageURL);
-      } else if (typeof choice.ImageURL === 'string' && choice.ImageURL) {
-        questionData.append(`choices[${index}][ImageURL]`, choice.ImageURL);
+        questionData.append(`choices[${index}][image]`, choice.ImageURL);
       }
     });
     
-    // For debugging
-    console.log("Submitting FormData:");
-    for (const pair of questionData.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
-    
-    if (editingQuestion.value && editingQuestion.value.id) {
-      await questionAPI.updateQuestion(editingQuestion.value.id, questionData);
+    if (editingQuestion.value && editingQuestion.value.ID) {
+      await questionAPI.updateQuestion(editingQuestion.value.ID, questionData);
     } else {
       // Just pass the FormData - quizId is already inside it
       await questionAPI.createQuestion(questionData);
@@ -241,7 +240,7 @@ function cancelForm() {
             class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <div v-if="previewQuestionImage" class="mt-2">
-            <img :src="previewQuestionImage" alt="Question image preview" class="max-h-40 rounded-md" />
+            <img :src="previewQuestionImageUrl" alt="Question image preview" class="max-h-40 rounded-md" />
           </div>
         </div>
         
