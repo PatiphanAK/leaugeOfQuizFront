@@ -11,11 +11,11 @@ import helper from '~/utils/helper';
 const route = useRoute();
 const quizId = Number(route.params.id);
 const quiz = useQuiz();
-const questionComposable = useQuestion(); // Renamed to avoid confusion
+const questionComposable = useQuestion();
 const modalStore = useQuestionModalStore();
 
 const quizData = ref<Quiz | null>(null);
-const questions = ref<Question[]>([]);
+const questions = computed(() => quizData.value?.Questions || []);
 const isLoading = ref(true);
 const error = ref('');
 
@@ -55,10 +55,8 @@ const handleDeleteQuestion = async (question: Question) => {
   if (!confirm('Are you sure you want to delete this question?')) return;
   
   try {
-    // Use the questionComposable with the correct method signature
     await questionComposable.deleteQuestion(quizId, question.ID);
-    // Remove the deleted question from the list
-    questions.value = questions.value.filter(q => q.ID !== question.ID);
+    fetchQuizDetails();
   } catch (err: any) {
     error.value = 'Failed to delete question. Please try again.';
     console.error('Error deleting question:', err);

@@ -1,6 +1,6 @@
 export class Helper {
   // ฟังก์ชันเพื่อเติม http:// หาก url ไม่มี
-  getHttp(url: string | null): string | null {
+  getHttp(url: string | null | undefined): string | null | undefined {
     if (url && !url.startsWith('http')) {
       return `http://${url}`;  // เติม http:// หากไม่มี http:// หรือ https://
     }

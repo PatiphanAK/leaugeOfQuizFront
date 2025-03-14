@@ -158,17 +158,11 @@ async function submitForm() {
   
   try {
     const questionData = new FormData();
-    // Add quizId to the FormData
     questionData.append('quizId', quizId.toString());
-    
-    // Add question text
     questionData.append('text', questionText.value);
-    
-    // Add question image if exists
     if (questionImage.value instanceof File) {
       questionData.append('image', questionImage.value);
     } else if (typeof questionImage.value === 'string' && questionImage.value) {
-      // Handle existing image URL case for editing
       questionData.append('imageUrl', questionImage.value);
     }
     
