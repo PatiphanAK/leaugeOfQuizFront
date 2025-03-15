@@ -35,6 +35,7 @@ export interface Category {
 }
 
 export interface CreateUpdateQuizData {
+    ID?: number;
     Title: string;
     Description: string;
     TimeLimit: number;
@@ -44,6 +45,7 @@ export interface CreateUpdateQuizData {
 }
 
 export interface CreateUpdateQuestionData {
+    ID?: number;
     QuizID: number;
     Text: string;
     ImageURL?: File | string;
@@ -51,6 +53,7 @@ export interface CreateUpdateQuestionData {
 }
 
 export interface CreateUpdateChoiceData {
+    ID?: number;
     Text: string;
     ImageURL?: File | string;
     IsCorrect: boolean;

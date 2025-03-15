@@ -161,7 +161,12 @@ async function submitForm() {
   
   try {
     const questionData = new FormData();
-    const jsonData = {
+    const jsonData: {
+      quizId: number;
+      text: string;
+      choices: { id: string | undefined; text: string; isCorrect: boolean }[];
+      questionId?: number;
+    } = {
       quizId: parseInt(quizId.toString()),
       text: questionText.value,
       choices: choices.value.map(choice => ({

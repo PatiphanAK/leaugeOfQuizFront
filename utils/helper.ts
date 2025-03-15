@@ -1,8 +1,11 @@
 export class Helper {
   // ฟังก์ชันเพื่อเติม http:// หาก url ไม่มี
-  getHttp(url: string | null | undefined): string | null | undefined {
-    if (url && !url.startsWith('http')) {
-      return `http://${url}`;  // เติม http:// หากไม่มี http:// หรือ https://
+  getHttp(url: string | null | undefined): string {
+    if (!url) {
+      return "https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png?20210521171500";  // Return placeholder image if URL is empty
+    }
+    if (!url.startsWith("http")) {
+      return `http://${url}`;  // Add http:// if the URL doesn't start with http:// or https://
     }
     return url;
   }
