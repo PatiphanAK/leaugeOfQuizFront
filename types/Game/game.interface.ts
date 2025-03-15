@@ -1,4 +1,5 @@
 export interface GameSession {
+    ID: any;
     id: string;
     quizId: number;
     hostId: number;
@@ -70,6 +71,8 @@ export interface GameSession {
   }
   
   export interface ApiResponse<T> {
+    player: any;
+    session: any;
     success: boolean;
     data: T;
     message?: string;
