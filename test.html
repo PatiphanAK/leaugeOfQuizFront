@@ -1,0 +1,10 @@
+<script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+<script>
+  const socket = io('http://localhost:3000', {
+    withCredentials: true,
+    transports: ['websocket', 'polling']
+  });
+  
+  socket.on('connect', () => console.log('Connected!'));
+  socket.on('connect_error', (err) => console.error('Connection error:', err));
+</script>

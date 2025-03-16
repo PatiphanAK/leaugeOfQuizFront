@@ -15,7 +15,7 @@ export const useGame = () => {
       
       if (session && session.ID) {
         // Navigate to the game session page
-        await router.push(`/game/session/${session.ID}`);
+        await router.push(`/game/sessions/${session.ID}`);
         toast.success('สร้างเกมสำเร็จ');
         return session;
       } else {

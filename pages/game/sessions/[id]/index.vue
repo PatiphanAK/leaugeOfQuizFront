@@ -22,7 +22,7 @@
         </div>
       </div>
   
-      <div v-else-if="!session || !session.id" class="flex flex-col items-center">
+      <div v-else-if="!session || session.ID" class="flex flex-col items-center">
         <p class="text-red-500 mb-2">ไม่พบเกมที่คุณต้องการ</p>
         <p class="text-gray-600 mb-4">เกมอาจถูกยกเลิกหรือรหัสเกมไม่ถูกต้อง</p>
         <NuxtLink to="/game/join" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
@@ -35,7 +35,7 @@
           <h1 class="text-3xl font-bold">ห้องรอเกม</h1>
           <div class="flex flex-col items-end">
             <p class="text-lg bg-gray-100 p-2 rounded-md inline-block">
-              รหัสเกม: <span class="font-mono font-bold">{{ session.id }}</span>
+              รหัสเกม: <span class="font-mono font-bold">{{ session.ID }}</span>
               <button @click="copySessionId" class="ml-2 p-1 hover:bg-gray-200 rounded">
                 <span>📋</span>
               </button>
@@ -247,25 +247,31 @@ const isSelfMessage = (message: ChatMessage) => {
   
   // โหลดข้อมูลเกมและผู้เล่น
   const loadGameSession = async () => {
-    try {
-      isLoading.value = true;
-      
-      // โหลดข้อมูล session
-      const response = await gameStore.getGameSession(sessionId);
-      
-      if (response) {
-        session.value = response;
-        players.value = response.Players || [];
-      } else {
-        throw new Error('ไม่พบข้อมูลเกม');
+  try {
+    isLoading.value = true;
+    
+    // โหลดข้อมูล session
+    const response = await gameStore.getGameSession(sessionId);
+    
+    if (response) {
+      // แปลงคีย์ ID เป็น id ก่อนเก็บในตัวแปร
+      const normalizedSession = { ...response };
+      if (normalizedSession.ID) {
+        normalizedSession.id = normalizedSession.ID;
       }
-    } catch (err) {
-      console.error('Load game session error:', err);
-      error.value = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูลเกม';
-    } finally {
-      isLoading.value = false;
+      
+      session.value = normalizedSession;
+      players.value = response.Players || [];
+    } else {
+      throw new Error('ไม่พบข้อมูลเกม');
     }
-  };
+  } catch (err) {
+    console.error('Load game session error:', err);
+    error.value = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูลเกม';
+  } finally {
+    isLoading.value = false;
+  }
+};
   
   // ฟังก์ชันเริ่มเกม
   const handleStartGame = async () => {
@@ -362,67 +368,101 @@ const isSelfMessage = (message: ChatMessage) => {
   };
   
 // เชื่อมต่อ WebSocket และตั้งค่า event listeners
+// Improved socket setup function
 const setupSocket = () => {
-  // เชื่อมต่อ socket
+  // Connect socket
+  console.log('Setting up WebSocket connection...');
   gameSocket.connect();
   
-  // ฟังเหตุการณ์ player_joined
+  // Listen for player_joined event
   gameSocket.on('player_joined', (payload: any) => {
+    console.log('Received player_joined event:', payload);
     if (payload.sessionId === sessionId && payload.player) {
-      // ตรวจสอบว่าผู้เล่นนี้มีอยู่แล้วหรือไม่
+      // Check if player already exists
       const playerExists = players.value.some(p => p.id === payload.player.id);
       
       if (!playerExists) {
         players.value.push(payload.player);
-        toast.success(`${payload.player.nickname} เข้าร่วมเกม`);
+        toast.success(`${payload.player.nickname} joined the game`);
       }
     }
   });
   
-  // ฟังเหตุการณ์ game_started
+  // Listen for game_started event
   gameSocket.on('game_started', (payload: any) => {
+    console.log('Received game_started event:', payload);
     if (payload.sessionId === sessionId) {
       session.value = { ...session.value, status: 'in_progress' } as GameSession;
-      toast.success('เกมเริ่มแล้ว!');
+      toast.success('Game started!');
       router.push(`/game/play/${sessionId}`);
     }
   });
   
-  // ฟังเหตุการณ์ chat_message
+  // Listen for chat_message event
   gameSocket.on('chat_message', (payload: any) => {
+    console.log('Received chat_message event:', payload);
     if (payload.sessionId === sessionId) {
-      // เพิ่มข้อความแชทเข้าไปในรายการ
+      // Add chat message to list
       chatMessages.value.push({
         userID: payload.userID,
         message: payload.message
       });
       
-      // เลื่อนแชทลงล่าง
+      // Scroll chat to bottom
       scrollChatToBottom();
     }
   });
   
-  // ฟังเหตุการณ์ socket เชื่อมต่อ/ตัดการเชื่อมต่อ
-  gameSocket.on('connect', () => {
-  console.log('Socket connected with ID:', gameSocket.socket?.value?.id);
+  // Listen for direct message events from server
+  gameSocket.on('message', (messageStr: string) => {
+    console.log('Received raw message event:', messageStr);
+    try {
+      const message = JSON.parse(messageStr);
+      console.log('Parsed message:', message);
+      
+      // Handle different message types
+      if (message.type === 'player_joined' && message.payload?.sessionId === sessionId) {
+        const newPlayer = message.payload.player;
+        if (newPlayer && !players.value.some(p => p.id === newPlayer.id)) {
+          players.value.push(newPlayer);
+          toast.success(`${newPlayer.nickname} joined the game`);
+        }
+      }
+    } catch (err) {
+      console.error('Error parsing message:', err);
+    }
+  });
   
-  const currentUser = authStore.userProfile || authStore.state.user;
-  if (currentUser && currentUser.id) {
-    console.log('User found:', currentUser.id);
+  // Listen for socket connection/disconnection events
+  gameSocket.on('connect', () => {
+    console.log('Socket connected with ID:', gameSocket.socket?.value?.id);
     
-    // ใช้ nickname จาก user หากไม่พบในรายการผู้เล่น
-    const player = players.value.find(p => p.userId === currentUser.id);
-    const nickname = player?.nickname || currentUser.username || 'Guest';
-    
-    console.log(`Joining session as ${nickname}`);
-    gameSocket.joinSession(sessionId, currentUser.id, nickname);
-  } else {
-    console.error('No user data available');
-  }
-});
+    // Attempt to join session after connection
+    setTimeout(() => {
+      const currentUser = authStore.userProfile || authStore.state.user;
+      if (currentUser && currentUser.id) {
+        console.log('User found:', currentUser.id);
+        
+        // Use nickname from user or player record
+        const player = players.value.find(p => p.userId === currentUser.id);
+        const nickname = player?.nickname || currentUser.username || currentUser.displayName || 'Guest';
+        
+        console.log(`Joining session as ${nickname}`);
+        gameSocket.joinSession(sessionId, currentUser.id, nickname);
+      } else {
+        console.error('No user data available');
+      }
+    }, 500); // Small delay to ensure connection is stable
+  });
   
   gameSocket.on('disconnect', () => {
     console.log('Socket disconnected');
+  });
+  
+  // Listen for server errors
+  gameSocket.on('error', (errorMsg: string) => {
+    console.error('Server error:', errorMsg);
+    toast.error(`Server error: ${errorMsg}`);
   });
 };
   // watch chat messages เพื่อเลื่อนลงล่างเมื่อมีข้อความใหม่
