@@ -46,6 +46,15 @@ export const useGameSocket = () => {
       socket.value.on('disconnect', (reason) => {
         isConnected.value = false;
         console.log('Socket disconnected:', reason);
+
+        if (reason === 'io server disconnect' || reason === 'transport close') {
+          console.log('Attempting to reconnect...');
+          setTimeout(() => {
+            if (!socket.value?.connected) {
+              connect();
+            }
+          }, 1000);
+        }
       });
 
       socket.value.on('error', (err: string) => {
@@ -82,6 +91,7 @@ export const useGameSocket = () => {
    * เข้าร่วม game session
    */
   const joinSession = (sessionId: string, userId: number, nickname: string) => {
+    console.log(`Attempting to join session: ${sessionId}, user: ${userId}, nickname: ${nickname}`);
     if (!isConnected.value) {
       connect();
     }

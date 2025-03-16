@@ -404,18 +404,22 @@ const setupSocket = () => {
   
   // ฟังเหตุการณ์ socket เชื่อมต่อ/ตัดการเชื่อมต่อ
   gameSocket.on('connect', () => {
-    console.log('Socket connected');
+  console.log('Socket connected with ID:', gameSocket.socket?.value?.id);
+  
+  const currentUser = authStore.userProfile || authStore.state.user;
+  if (currentUser && currentUser.id) {
+    console.log('User found:', currentUser.id);
     
-    // เข้าร่วมห้องผ่าน socket - use both userProfile and state.user for compatibility
-    const currentUser = authStore.userProfile || authStore.state.user;
-    if (currentUser && currentUser.id) {
-      // ดึงชื่อผู้เล่นจากรายการ
-      const player = players.value.find(p => p.userId === currentUser.id);
-      if (player) {
-        gameSocket.joinSession(sessionId, currentUser.id, player.nickname);
-      }
-    }
-  });
+    // ใช้ nickname จาก user หากไม่พบในรายการผู้เล่น
+    const player = players.value.find(p => p.userId === currentUser.id);
+    const nickname = player?.nickname || currentUser.username || 'Guest';
+    
+    console.log(`Joining session as ${nickname}`);
+    gameSocket.joinSession(sessionId, currentUser.id, nickname);
+  } else {
+    console.error('No user data available');
+  }
+});
   
   gameSocket.on('disconnect', () => {
     console.log('Socket disconnected');
