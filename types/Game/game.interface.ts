@@ -8,7 +8,7 @@ export interface GameSession {
     finishedAt?: string;
     createdAt: string;
     quiz?: Quiz;
-    players?: Player[];
+    Players?: Player[];
   }
   
   export interface Quiz {

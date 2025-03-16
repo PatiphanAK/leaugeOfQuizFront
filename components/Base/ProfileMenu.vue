@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   user: {
@@ -13,13 +13,19 @@ const isUserMenuOpen = ref(false);
 const imageError = ref(false);
 const isImageLoading = ref(true);
 
+// Log user data for debugging
+console.log('ProfileMenu received user data:', props.user);
+
 // Use computed property to handle image URL with size optimization
 const profileImageUrl = computed(() => {
-  // Get the base URL from user object
+  // Get the base URL from user object with multiple fallbacks
   const baseUrl = props.user.pictureURL || 
                   props.user.photoURL || 
                   props.user.picture ||
+                  props.user.avatar ||
                   '';
+  
+  console.log('Profile image URL source:', baseUrl);
   
   if (!baseUrl) return '/assets/pic/auth/fallback-profile-image.jpg';
   
@@ -34,22 +40,45 @@ const profileImageUrl = computed(() => {
   return baseUrl;
 });
 
+// Get display name with fallbacks
+const displayName = computed(() => {
+  return props.user.displayName || props.user.username || 'User';
+});
+
+// Get email with fallback
+const email = computed(() => {
+  return props.user.email || '';
+});
+
 const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value;
 };
 
+// Close the menu when clicking outside
+const closeUserMenu = (e) => {
+  if (isUserMenuOpen.value && !e.target.closest('#user-menu-button') && !e.target.closest('#user-dropdown')) {
+    isUserMenuOpen.value = false;
+  }
+};
+
 const handleImageError = () => {
-  console.error('Image failed to load');
+  console.error('Profile image failed to load:', profileImageUrl.value);
   imageError.value = true;
   isImageLoading.value = false;
 };
 
 const handleImageLoaded = () => {
+  console.log('Profile image loaded successfully');
   isImageLoading.value = false;
 };
 
 // Preload the image
 onMounted(() => {
+  console.log('ProfileMenu mounted, preloading image');
+  
+  // Add click outside listener
+  document.addEventListener('click', closeUserMenu);
+  
   if (profileImageUrl.value !== '/assets/pic/auth/fallback-profile-image.jpg') {
     const img = new Image();
     img.src = profileImageUrl.value;
@@ -58,6 +87,11 @@ onMounted(() => {
   } else {
     isImageLoading.value = false;
   }
+});
+
+// Clean up event listener
+onUnmounted(() => {
+  document.removeEventListener('click', closeUserMenu);
 });
 </script>
 
@@ -81,7 +115,7 @@ onMounted(() => {
         class="w-full h-full object-cover"
         :src="profileImageUrl" 
         @error="handleImageError"
-        :alt="`${user.displayName}'s profile image`"
+        :alt="`${displayName}'s profile image`"
       />
       
       <!-- Fallback image (if error) -->
@@ -100,18 +134,18 @@ onMounted(() => {
       class="absolute z-50 right-0 mt-2 text-base list-none bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 dark:divide-gray-600 w-48"
     >
       <div class="px-4 py-3">
-        <span class="block text-sm text-gray-900 dark:text-white">{{ user.displayName }}</span>
-        <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ user.email }}</span>
+        <span class="block text-sm text-gray-900 dark:text-white">{{ displayName }}</span>
+        <span class="block text-sm text-gray-500 truncate dark:text-gray-400">{{ email }}</span>
       </div>
       <ul class="py-2" aria-labelledby="user-menu-button">
         <li>
           <NuxtLink to="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">
-            Profile
+            โปรไฟล์
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">
-            Setting
+          <NuxtLink to="/dashboard" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">
+            แดชบอร์ด
           </NuxtLink>
         </li>
         <li>
@@ -119,7 +153,7 @@ onMounted(() => {
             @click="emit('logout')"
             class="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
           >
-            Logout
+            ออกจากระบบ
           </button>
         </li>
       </ul>

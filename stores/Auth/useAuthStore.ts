@@ -1,93 +1,97 @@
 import { defineStore } from 'pinia';
-import { authAPI } from '~/api/Auth/auth.api';
-import type { User } from '~/types/Auth/auth.interface';
-
-interface AuthState {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+import { useAuth } from '~/composables/Auth/useAuth';
+// User interface
+interface User {
+  id: number;
+  username: string;
+  email?: string;
+  avatar?: string;
+  displayName?: string;
+  photoURL?: string;
 }
 
-export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    user: null,
+export const useAuthStore = defineStore('auth', () => {
+  // State
+  const state = reactive({
+    user: null as User | null,
     isAuthenticated: false,
     isLoading: false,
-  }),
+    error: null as string | null,
+  });
 
-  getters: {
-    isLoggedIn: (state) => state.isAuthenticated && !!state.user,
-    userProfile: (state) => state.user,
-  },
+  // Backward compatibility getters
+  const userProfile = computed(() => state.user);
+  const isAuthenticated = computed(() => state.isAuthenticated);
+  const isLoading = computed(() => state.isLoading);
+  const error = computed(() => state.error);
 
-  actions: {
-    async fetchUser() {
-      try {
-        this.isLoading = true;
-        const user = await authAPI.getCurrentUser();
-        
-        if (user) {
-          this.user = user;
-          this.isAuthenticated = true;
-        } else {
-          this.user = null;
-          this.isAuthenticated = false;
-        }
-      } catch (error) {
-        this.user = null;
-        this.isAuthenticated = false;
-      } finally {
-        this.isLoading = false;
+  // Actions
+  const setUser = (user: User | null) => {
+    state.user = user;
+    state.isAuthenticated = !!user;
+  };
+
+  const clearUser = () => {
+    state.user = null;
+    state.isAuthenticated = false;
+  };
+
+  const setError = (error: string | null) => {
+    state.error = error;
+  };
+
+  const setLoading = (loading: boolean) => {
+    state.isLoading = loading;
+  };
+
+  // Load user data
+  const loadUser = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { getCurrentUser } = useAuth();
+      const user = await getCurrentUser();
+      
+      if (user) {
+        setUser(user);
+      } else {
+        clearUser();
       }
-    },
+      
+      return user;
+    } catch (error) {
+      console.error('Failed to load user:', error);
+      setError(error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้');
+      clearUser();
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    async loginWithGoogle() {
-      await authAPI.loginWithGoogle();
-      // หมายเหตุ: การ redirect จะเกิดขึ้น ไม่ต้องทำอะไรต่อ
-    },
+  // Add fetchUser as an alias for backward compatibility
+  const fetchUser = loadUser;
 
-    setUser(user: User | null) {
-      this.user = user;
-      this.isAuthenticated = !!user;
-    },
-    
-    clearUser() {
-      this.user = null;
-      this.isAuthenticated = false;
-    },
+  // Initialize
+  if (process.client) {
+    loadUser();
+  }
 
-    async logout() {
-      try {
-        this.isLoading = true;
-        const success = await authAPI.logout();
-        
-        if (success) {
-          this.user = null;
-          this.isAuthenticated = false;
-        }
-        
-        return success;
-      } catch (error) {
-        console.error('Logout error:', error);
-        return false;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    /**
-     * ตรวจสอบสถานะ authentication เมื่อแอปเริ่มต้น
-     */
-    async initAuth() {
-      try {
-        this.isLoading = true;
-        await this.fetchUser();
-        return this.isAuthenticated;
-      } catch (error) {
-        return false;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-  },
+  return {
+    // State access
+    state,
+    // Compatibility getters (direct access to properties)
+    userProfile,
+    isAuthenticated,
+    isLoading,
+    error,
+    // Methods
+    setUser,
+    clearUser,
+    setError,
+    setLoading,
+    loadUser,
+    fetchUser
+  };
 });

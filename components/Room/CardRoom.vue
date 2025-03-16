@@ -33,7 +33,7 @@ const handleCreateGame = async () => {
     isCreating.value = true;
     const session = await createGame(props.quiz.ID);
     // Navigate to the game session page using the session ID
-    navigateTo(`/game/session/${session.ID}`);
+    navigateTo(`/game/sessions/${session.ID}`);
   } catch (error) {
     console.error('Failed to create game:', error);
   } finally {

@@ -5,12 +5,12 @@ import { useAuth } from '~/composables/Auth/useAuth';
 import LoginButton from '~/components/Base/LoginButton.vue';
 import ProfileMenu from '~/components/Base/ProfileMenu.vue';
 
-
+// State management
 const authStore = useAuthStore();
 const { loginWithGoogle, logout } = useAuth();
 
-// Auth state
-const user = computed(() => authStore.userProfile);
+// Auth state - using the property names from your original navbar
+const user = computed(() => authStore.userProfile || authStore.state?.user);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 // Menu states
@@ -25,32 +25,90 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard' },
 ];
 
-// Handle logout
-const handleLogout = async () => {
-  await logout();
-  authStore.clearUser();
+// Calculate active class for navigation items
+const isActiveRoute = (path) => {
+  const route = useRoute();
+  return route.path === path;
 };
 
+// Handle logout
+const handleLogout = async () => {
+  try {
+    await logout();
+    authStore.clearUser();
+    console.log("User logged out successfully");
+  } catch (error) {
+    console.error("Logout failed:", error);
+  }
+};
+
+// Format user data to ensure it has all properties ProfileMenu expects
+const formattedUser = computed(() => {
+  if (!user.value) return null;
+  
+  return {
+    // Use existing properties or provide fallbacks
+    displayName: user.value.username || user.value.displayName || 'User',
+    email: user.value.email || '',
+    pictureURL: user.value.avatar || user.value.pictureURL || user.value.photoURL || '',
+    // Include original properties
+    ...user.value
+  };
+});
+
+// Determine if we're in development mode
+// For Nuxt, use import.meta.dev or config instead of process.env
+const isDevelopment = ref(false);
+
+// Lifecycle hooks
 onMounted(() => {
+  // In Nuxt 3, you can use import.meta.dev instead of process.env
+  // But we'll make a simple check against the hostname to be safe
+  isDevelopment.value = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1';
+  
   // Check login status when component loads
   if (!authStore.isLoading && !isAuthenticated.value) {
-    authStore.fetchUser();
+    // Use fetchUser if it exists, otherwise fall back to loadUser
+    if (typeof authStore.fetchUser === 'function') {
+      authStore.fetchUser();
+    } else if (typeof authStore.loadUser === 'function') {
+      authStore.loadUser();
+    }
   }
+  
+  // Log the current auth state for debugging
+  console.log("Auth state:", {
+    isAuthenticated: isAuthenticated.value,
+    user: user.value,
+    authStoreMethods: Object.keys(authStore)
+  });
 });
 </script>
+
 <template>
   <nav class="bg-white border-gray-200 dark:bg-gray-900">
     <div class="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
       <!-- Logo and brand name -->
-      <NuxtLink to="/Home" class="flex items-center space-x-3 rtl:space-x-reverse">
+      <NuxtLink to="/" class="flex items-center space-x-3 rtl:space-x-reverse">
         <img src="https://flowbite.com/docs/images/logo.svg" class="h-8" alt="App Logo" />
         <span class="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">League of Quiz</span>
       </NuxtLink>
       
       <!-- Right section (login/profile) -->
       <div class="flex items-center md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+        <!-- Debug info in dev mode (using ref instead of process.env) -->
+        <div v-if="isDevelopment" class="text-xs text-gray-500 mr-2">
+          {{ isAuthenticated ? 'Authenticated' : 'Not Authenticated' }}
+        </div>
+        
         <LoginButton v-if="!isAuthenticated" @login="loginWithGoogle" />
-        <ProfileMenu v-else :user="user" @logout="handleLogout" />
+        <ProfileMenu 
+          v-else-if="formattedUser" 
+          :user="formattedUser" 
+          @logout="handleLogout" 
+        />
+        <div v-else class="text-sm text-gray-500">Loading...</div>
         
         <!-- Mobile menu button -->
         <button 
@@ -77,11 +135,11 @@ onMounted(() => {
             <NuxtLink 
               :to="item.path"
               :class="[
-                item.path === '/' ? 'md:text-blue-700 md:dark:text-blue-500' : 'md:hover:text-blue-700 md:dark:hover:text-blue-500',
+                isActiveRoute(item.path) ? 'md:text-blue-700 md:dark:text-blue-500' : 'md:hover:text-blue-700 md:dark:hover:text-blue-500',
                 'block py-2 px-3 rounded-sm md:bg-transparent md:p-0 dark:text-white',
-                item.path === '/' ? 'text-white bg-blue-700' : 'text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white md:hover:bg-transparent'
+                isActiveRoute(item.path) ? 'text-white bg-blue-700' : 'text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-white md:hover:bg-transparent'
               ]"
-              :aria-current="item.path === '/' ? 'page' : undefined"
+              :aria-current="isActiveRoute(item.path) ? 'page' : undefined"
             >
               {{ item.label }}
             </NuxtLink>
@@ -91,4 +149,3 @@ onMounted(() => {
     </div>
   </nav>
 </template>
-
