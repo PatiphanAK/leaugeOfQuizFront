@@ -1,6 +1,9 @@
-<script setup>
+<script lang="ts" setup>
 import { useAuth } from '~/composables/Auth/useAuth';
 import { useAuthStore } from '~/stores/Auth/useAuthStore';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
 
 const props = defineProps({
   isOpen: {
@@ -8,7 +11,6 @@ const props = defineProps({
     default: false
   }
 });
-
 const authStore = useAuthStore();
 const { logout } = useAuth();
 
@@ -63,13 +65,24 @@ const closeSidebarOnMobile = () => {
 
 const handleLogout = async () => {
   try {
-    await logout();
+    if (process.client) {
+      localStorage.setItem('isLoggingOut', 'true');
+    }
+    
+    const success = await logout();
     authStore.clearUser();
     closeSidebarOnMobile();
-    navigateTo('/home');
+    if (process.client) {
+
+      localStorage.removeItem('isLoggingOut');
+      localStorage.removeItem('authRedirect');
+      window.location.href = '/home';
+    }
   } catch (error) {
     console.error("Logout failed:", error);
-    navigateTo('/home');
+    if (process.client) {
+      window.location.href = '/home';
+    }
   }
 };
 </script>

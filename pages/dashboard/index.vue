@@ -25,28 +25,28 @@ const block_meta = [
   {
     title: 'ดูคะแนนและประวัติ',
     description: 'ดูคะแนนและประวัติการทำแบบทดสอบ',
-    link: '/history',
+    link: 'history',
     icon: 'history',
     color: 'bg-gradient-to-br from-green-500 to-green-600'
   },
   {
     title: 'แก้ไขข้อมูลส่วนตัว',
     description: 'แก้ไขข้อมูลส่วนตัวและรหัสผ่าน',
-    link: '/profile',
+    link: 'profile',
     icon: 'user',
     color: 'bg-gradient-to-br from-purple-500 to-purple-600'
   },
   {
     title: 'สร้างห้อง',
     description: 'สร้างห้องเพื่อเชิญเพื่อนเข้าร่วม',
-    link: '/rooms',
+    link: 'rooms',
     icon: 'users',
     color: 'bg-gradient-to-br from-amber-500 to-amber-600'
   },
   {
     title: 'เข้าร่วมห้อง',
     description: 'เข้าร่วมห้องเกมที่เพื่อนเชิญ',
-    link: '/rooms/join',
+    link: '/game/join',
     icon: 'user-plus',
     color: 'bg-gradient-to-br from-rose-500 to-rose-600'
   }
@@ -55,7 +55,7 @@ const block_meta = [
 const updatedBlockMeta = computed(() => {
   return block_meta.map(item => ({
     ...item,
-    link: `${currentRoute.path}${item.link}`
+    link: item.link.startsWith('/') ? item.link : `${currentRoute.path}${item.link}`
   }));
 });
 
