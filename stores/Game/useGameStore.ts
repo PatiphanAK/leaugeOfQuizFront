@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { GameSession, GamePlayer, PlayerAnswer, Question, ChatMessagePayload } from '@/types/Game/game.interface';
-import { api } from '~/api/Game/game.api';
+import { gameAPI } from '~/api/Game/game.api';
 import { wsApi } from '~/api/Game/game.api';
 
 export const useGameStore = defineStore('game', () => {
@@ -18,32 +18,30 @@ export const useGameStore = defineStore('game', () => {
   // Getters
   const isHost = computed(() => {
     if (!currentSession.value || !currentPlayer.value) return false;
-    return currentSession.value.hostId === currentPlayer.value.userId;
+    return currentSession.value.HostID === currentPlayer.value.UserID;
   });
 
   const currentQuestion = computed(() => {
-    if (!currentSession.value?.quiz?.questions || currentQuestionIndex.value === null) {
+    if (!currentSession.value?.Quiz?.Questions || currentQuestionIndex.value === null) {
       return null;
     }
-    return currentSession.value.quiz.questions[currentQuestionIndex.value];
+    return currentSession.value.Quiz.Questions[currentQuestionIndex.value];
   });
 
-  const gameStatus = computed(() => currentSession.value?.status || 'lobby');
+  const gameStatus = computed(() => currentSession.value?.Status || 'lobby');
 
   const playerResults = computed(() => {
-    // Sort players by score in descending order
-    return [...players.value].sort((a, b) => b.score - a.score);
+    return [...players.value].sort((a, b) => b.Score - a.Score);
   });
 
   const isWebSocketConnected = computed(() => wsApi.isConnected.value);
 
-  // Actions
   async function createGameSession(quizId: number) {
     try {
       isLoading.value = true;
       error.value = null;
       
-      const session = await api.createGameSession(quizId);
+      const session = await gameAPI.createGameSession(quizId);
       currentSession.value = session;
       
       return session;
@@ -60,7 +58,7 @@ export const useGameStore = defineStore('game', () => {
       isLoading.value = true;
       error.value = null;
       
-      const { session, players: sessionPlayers } = await api.getGameSessionDetail(sessionId);
+      const { session, players: sessionPlayers } = await gameAPI.getGameSessionDetail(sessionId);
       currentSession.value = session;
       players.value = sessionPlayers;
       
@@ -78,7 +76,7 @@ export const useGameStore = defineStore('game', () => {
       isLoading.value = true;
       error.value = null;
       
-      const { session, players: sessionPlayers } = await api.getGameResults(sessionId);
+      const { session, players: sessionPlayers } = await gameAPI.getGameResults(sessionId);
       currentSession.value = session;
       players.value = sessionPlayers;
       
@@ -166,9 +164,9 @@ export const useGameStore = defineStore('game', () => {
       
       // Update player scores
       for (const answer of payload.answers) {
-        const player = players.value.find(p => p.id === answer.playerId);
+        const player = players.value.find(p => p.ID === answer.PlayerID);
         if (player) {
-          player.score += answer.score;
+          player.Score += answer.Score;
         }
       }
       

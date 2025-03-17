@@ -12,16 +12,14 @@ import type {
 
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
-// สร้าง axios instance พร้อมตั้งค่า withCredentials เป็น true 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // สำคัญ: ทำให้ส่ง cookies ไปด้วยทุกครั้ง
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// อินเตอร์เฟซสำหรับ Payload ที่ใช้กับ WebSocket
 interface WSJoinSessionPayload {
   sessionId: string;
   userId: number;

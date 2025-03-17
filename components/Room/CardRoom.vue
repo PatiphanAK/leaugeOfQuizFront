@@ -75,19 +75,15 @@ const handleCreateGame = async () => {
     const joinResult = wsApi.joinSession(joinPayload);
     console.log('Join session result:', joinResult);
     
-    // เปิดหน้าเกมเซสชันในแท็บเดียวกัน
     setTimeout(() => {
       console.log('Opening game session in current tab:', session.ID);
       window.location.href = `/game/sessions/${session.ID}`;
-      
-      // หรือถ้าต้องการเปิดในแท็บใหม่
-      // window.open(`/game/sessions/${session.ID}`, '_blank');
+    
     }, 1000);
     
   } catch (error) {
     console.error('Failed to create game:', error);
     creationError.value = 'ไม่สามารถสร้างห้องเกมได้ โปรดลองอีกครั้ง';
-    // แสดงข้อความแจ้งเตือนผู้ใช้
     alert('ไม่สามารถสร้างห้องเกมได้ โปรดลองอีกครั้ง: ' + (error instanceof Error ? error.message : String(error)));
   } finally {
     isCreating.value = false;
