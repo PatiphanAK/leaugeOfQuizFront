@@ -42,6 +42,13 @@ const block_meta = [
     link: '/rooms',
     icon: 'users',
     color: 'bg-gradient-to-br from-amber-500 to-amber-600'
+  },
+  {
+    title: 'เข้าร่วมห้อง',
+    description: 'เข้าร่วมห้องเกมที่เพื่อนเชิญ',
+    link: '/rooms/join',
+    icon: 'user-plus',
+    color: 'bg-gradient-to-br from-rose-500 to-rose-600'
   }
 ];
 
