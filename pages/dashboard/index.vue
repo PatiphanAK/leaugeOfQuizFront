@@ -18,7 +18,7 @@ const block_meta = [
   {
     title: 'สร้างแบบทดสอบ',
     description: 'สร้างแบบทดสอบใหม่เพื่อให้ผู้เล่นทำ',
-    link: `/quizzes`,
+    link: `quizzes`,
     icon: 'plus-circle',
     color: 'bg-gradient-to-br from-blue-500 to-blue-600'
   },
@@ -46,6 +46,7 @@ const block_meta = [
   {
     title: 'เข้าร่วมห้อง',
     description: 'เข้าร่วมห้องเกมที่เพื่อนเชิญ',
+    inDashboard: false,
     link: '/game/join',
     icon: 'user-plus',
     color: 'bg-gradient-to-br from-rose-500 to-rose-600'
@@ -55,7 +56,7 @@ const block_meta = [
 const updatedBlockMeta = computed(() => {
   return block_meta.map(item => ({
     ...item,
-    link: item.link.startsWith('/') ? item.link : `${currentRoute.path}${item.link}`
+    link: item.link.startsWith('/') ? item.link : `${currentRoute.path}/${item.link}`
   }));
 });
 
