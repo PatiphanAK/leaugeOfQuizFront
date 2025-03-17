@@ -18,7 +18,7 @@ const isMobileMenuOpen = ref(false);
 
 // Navigation items
 const navItems = [
-  { path: '/', label: 'Home' },
+  { path: '/home', label: 'Home' },
   { path: '/about', label: 'About us' },
   { path: '/play', label: 'Play' },
   { path: '/contact', label: 'Contact' },

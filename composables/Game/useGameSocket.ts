@@ -3,7 +3,8 @@ import { ref, onUnmounted, computed } from 'vue';
 import type { SocketMessage } from '~/types/Game/game.interface';
 
 export const useGameSocket = () => {
-  const BASE_URL = process.env.NUXT_PUBLIC_API_BASE_URL || 'ws://localhost:3000/socket.io/';
+  // Remove /socket.io/ from the end of the URL and don't use 'ws://' protocol
+  const BASE_URL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
   
   const socket = ref<Socket | null>(null);
   const isConnected = ref(false);
@@ -27,9 +28,9 @@ export const useGameSocket = () => {
     if (!socket.value) {
       console.log('Creating new Socket.IO connection to:', BASE_URL);
       
-      // Create new socket - IMPORTANT CHANGES:
-      // 1. Use only polling transport initially
-      // 2. Disable upgrade to websocket temporarily
+      // Fix socket.io configuration:
+      // 1. Use polling first, then try websocket (more reliable)
+      // 2. Enable upgrade to allow changing transport methods
       socket.value = io(BASE_URL, {
         autoConnect: false,
         withCredentials: true,
@@ -37,8 +38,8 @@ export const useGameSocket = () => {
         reconnectionAttempts: maxReconnectAttempts,
         reconnectionDelay: 1000,
         timeout: 10000,
-        transports: ['websocket','polling'],
-        upgrade: false,
+        transports: ['polling', 'websocket'], // Use polling first then websocket
+        upgrade: true, // Allow transport upgrade
       });
 
       // Setup event listeners with better logging
@@ -89,6 +90,8 @@ export const useGameSocket = () => {
     }
   };
 
+  // Rest of the code remains the same...
+  
   /**
    * Disconnect socket
    */
@@ -227,4 +230,4 @@ export const useGameSocket = () => {
     on,
     off
   };
-};
+}
