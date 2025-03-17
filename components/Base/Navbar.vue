@@ -15,7 +15,7 @@ const isMobileMenuOpen = ref(false);
 const navItems = [
   { path: '/home', label: 'Home' },
   { path: '/about', label: 'About Project' },
-  { path: '/detial', label: 'Development detail' },
+  { path: '/detail', label: 'Development detail' },
   { path: '/contact', label: 'Contact' },
   { path: '/dashboard', label: 'Dashboard' },
 ];

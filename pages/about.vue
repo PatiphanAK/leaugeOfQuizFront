@@ -202,6 +202,12 @@ const features = [
                 ติดตั้ง <span class="font-semibold">Bun</span> (สำหรับการจัดการ
                 dependency ของ frontend ที่เร็วขึ้น)
               </li>
+              <li>
+                <span class="font-semibold">ใช้คำสั่ง go run main.go</span>
+              </li>
+              <li>
+                <span class="font-semibold">ใช้คำสั่ง bun install แล้วก็ bun run dev</span>
+              </li>
             </ol>
 
             <h3 class="text-lg font-semibold text-gray-700 mb-2">
@@ -213,14 +219,14 @@ const features = [
                 class="bg-gray-900 text-green-400 p-4 rounded-md overflow-x-auto text-sm font-mono"
               >
                 <pre>
-DB_HOST=localhost
+  DB_HOST=localhost
   DB_USER=postgres
   DB_PASSWORD=tatar025
   DB_NAME=mydb
   DB_PORT=5432
   
   # ตัวอย่าง Credential สำหรับ Google OAuth
-  # ต้องสร้าง Credential และเพิ่ม endpoint ที่
+  # ต้องสร้าง Credential และเพิ่ม allow origin/callback ที่
   # https://console.cloud.google.com/apis/credentials
   
   GOOGLE_CLIENT_ID="12312313131"
