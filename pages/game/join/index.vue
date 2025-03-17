@@ -30,7 +30,7 @@ const joinRoom = async () => {
     
     // รอสักครู่แล้วนำทางไปยังห้องทดสอบ
     setTimeout(() => {
-      navigateTo(`/dashboard/rooms/${roomCode.value}`);
+      navigateTo(`/game/sessions/${roomCode.value}`);
     }, 1500);
     
   } catch (err) {

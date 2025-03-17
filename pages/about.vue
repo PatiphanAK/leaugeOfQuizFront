@@ -71,7 +71,7 @@ const features = [
               <span class="text-blue-600">Vue3</span>,
               <span class="text-blue-600">Nuxt3</span>,
               <span class="text-blue-600">GoFiber</span> และ
-              <span class="text-blue-600">Socket.io</span>
+              <span class="text-blue-600">Gorilla Websocket</span>
               เพื่อมอบประสบการณ์การเล่นเกมที่ราบรื่นและมีปฏิสัมพันธ์
             </p>
           </section>

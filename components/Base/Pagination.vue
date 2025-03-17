@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-// Define props with TypeScript
 const props = defineProps({
   currentPage: {
     type: Number,
@@ -11,10 +10,10 @@ const props = defineProps({
   }
 });
 
-// Define emits
+
 const emit = defineEmits(['previous', 'next']);
 
-// Methods
+
 const handlePrevious = () => {
   if (props.currentPage > 1) {
     emit('previous');

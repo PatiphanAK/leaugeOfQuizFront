@@ -14,8 +14,8 @@ const isMobileMenuOpen = ref(false);
 
 const navItems = [
   { path: '/home', label: 'Home' },
-  { path: '/about', label: 'About us' },
-  { path: '/play', label: 'Play' },
+  { path: '/about', label: 'About Project' },
+  { path: '/detial', label: 'Development detail' },
   { path: '/contact', label: 'Contact' },
   { path: '/dashboard', label: 'Dashboard' },
 ];
@@ -26,7 +26,6 @@ const isActiveRoute = (path) => {
   return route.path === path;
 };
 
-// Handle logout
 const handleLogout = async () => {
   try {
     await logout();

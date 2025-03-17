@@ -13,12 +13,8 @@ const isUserMenuOpen = ref(false);
 const imageError = ref(false);
 const isImageLoading = ref(true);
 
-// Log user data for debugging
-console.log('ProfileMenu received user data:', props.user);
 
-// Use computed property to handle image URL with size optimization
 const profileImageUrl = computed(() => {
-  // Get the base URL from user object with multiple fallbacks
   const baseUrl = props.user.pictureURL || 
                   props.user.photoURL || 
                   props.user.picture ||
@@ -28,24 +24,18 @@ const profileImageUrl = computed(() => {
   console.log('Profile image URL source:', baseUrl);
   
   if (!baseUrl) return '/assets/pic/auth/fallback-profile-image.jpg';
-  
-  // If it's a Google user content URL, optimize it
   if (baseUrl.includes('googleusercontent.com')) {
-    // Extract the base part of the URL (remove size parameter)
     const basePart = baseUrl.split('=')[0];
-    // Request a specific size for faster loading (128px)
     return `${basePart}=s128-c`;
   }
   
   return baseUrl;
 });
 
-// Get display name with fallbacks
 const displayName = computed(() => {
   return props.user.displayName || props.user.username || 'User';
 });
 
-// Get email with fallback
 const email = computed(() => {
   return props.user.email || '';
 });
@@ -54,7 +44,6 @@ const toggleUserMenu = () => {
   isUserMenuOpen.value = !isUserMenuOpen.value;
 };
 
-// Close the menu when clicking outside
 const closeUserMenu = (e) => {
   if (isUserMenuOpen.value && !e.target.closest('#user-menu-button') && !e.target.closest('#user-dropdown')) {
     isUserMenuOpen.value = false;
@@ -72,11 +61,9 @@ const handleImageLoaded = () => {
   isImageLoading.value = false;
 };
 
-// Preload the image
 onMounted(() => {
   console.log('ProfileMenu mounted, preloading image');
   
-  // Add click outside listener
   document.addEventListener('click', closeUserMenu);
   
   if (profileImageUrl.value !== '/assets/pic/auth/fallback-profile-image.jpg') {
@@ -89,7 +76,6 @@ onMounted(() => {
   }
 });
 
-// Clean up event listener
 onUnmounted(() => {
   document.removeEventListener('click', closeUserMenu);
 });
@@ -97,7 +83,7 @@ onUnmounted(() => {
 
 <template>
   <div class="relative">
-    <!-- Profile button -->
+
     <button 
       id="user-menu-button"
       @click="toggleUserMenu" 
