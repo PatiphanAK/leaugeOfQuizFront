@@ -1,82 +1,169 @@
+import { ref } from 'vue';
 import { useGameStore } from '~/stores/Game/useGameStore';
+import { useGameSocket } from '~/composables/Game/useGameSocket';
 import { useToast } from '~/composables/useToast';
+import type { GameSession, Player, PlayerAnswer } from '~/types/Game/game.interface';
 
-export const useGame = () => {
+export function useGame() {
   const gameStore = useGameStore();
+  const gameSocket = useGameSocket();
   const toast = useToast();
-  const router = useRouter();
-  
+
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
+
   /**
-   * สร้างเกมใหม่จาก quiz ID
+   * สร้างเกมใหม่
    */
-  const createGame = async (quizId: number) => {
+  const createGame = async (quizId: number): Promise<GameSession | null> => {
+    isLoading.value = true;
+    error.value = null;
+
     try {
       const session = await gameStore.createGameSession(quizId);
-      
-      if (session && session.ID) {
-        // Navigate to the game session page
-        await router.push(`/game/sessions/${session.ID}`);
-        toast.success('สร้างเกมสำเร็จ');
-        return session;
-      } else {
-        throw new Error('ไม่ได้รับข้อมูล session ที่ถูกต้อง');
-      }
-    } catch (error) {
-      console.error('Create game error:', error);
-      const errorMessage = (error as Error).message || 'เกิดข้อผิดพลาด';
-      toast.error(`ไม่สามารถสร้างเกมได้: ${errorMessage}`);
-      throw error;
+      return session;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to create game';
+      toast.error(error.value);
+      return null;
+    } finally {
+      isLoading.value = false;
     }
   };
-  
+
   /**
-   * เข้าร่วมเกมด้วย session ID และชื่อผู้เล่น
+   * เข้าร่วมเกม
    */
-  const joinGame = async (sessionId: string, nickname: string) => {
+  const joinGame = async (sessionId: string, nickname: string): Promise<Player | null> => {
+    isLoading.value = true;
+    error.value = null;
+
     try {
+      // เชื่อมต่อ WebSocket ถ้ายังไม่ได้เชื่อมต่อ
+      if (!gameSocket.isConnected.value) {
+        gameSocket.connect();
+      }
+
+      // เข้าร่วมเกมผ่าน REST API
       const player = await gameStore.joinGameSession(sessionId, nickname);
-      
-      if (player) {
-        // หลังจากเข้าร่วมสำเร็จ นำทางไปยังหน้าเกม
-        await router.push(`/game/play/${sessionId}`);
-        toast.success('เข้าร่วมเกมสำเร็จ');
-        return player;
-      } else {
-        throw new Error('ไม่ได้รับข้อมูลผู้เล่นที่ถูกต้อง');
-      }
-    } catch (error) {
-      console.error('Join game error:', error);
-      const errorMessage = (error as Error).message || 'เกิดข้อผิดพลาด';
-      toast.error(`ไม่สามารถเข้าร่วมเกม: ${errorMessage}`);
-      throw error;
+      return player;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to join game';
+      toast.error(error.value);
+      return null;
+    } finally {
+      isLoading.value = false;
     }
   };
-  
+
   /**
-   * เริ่มเกมด้วย session ID
+   * เริ่มเกม (สำหรับโฮสต์)
    */
-  const startGame = async (sessionId: string) => {
+  const startGame = async (sessionId: string): Promise<GameSession | null> => {
+    isLoading.value = true;
+    error.value = null;
+
     try {
+      // เริ่มเกมผ่าน REST API
       const session = await gameStore.startGameSession(sessionId);
       
-      if (session) {
-        toast.success('เริ่มเกมสำเร็จ');
-        return session;
-      } else {
-        throw new Error('ไม่ได้รับข้อมูล session ที่ถูกต้อง');
+      // ถ้าเชื่อมต่อ WebSocket อยู่ แจ้งให้ผู้เล่นคนอื่นรู้ด้วย
+      if (gameSocket.isConnected.value) {
+        gameSocket.startGame(sessionId);
       }
-    } catch (error) {
-      console.error('Start game error:', error);
-      const errorMessage = (error as Error).message || 'เกิดข้อผิดพลาด';
-      toast.error(`ไม่สามารถเริ่มเกม: ${errorMessage}`);
-      throw error;
+      
+      return session;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to start game';
+      toast.error(error.value);
+      return null;
+    } finally {
+      isLoading.value = false;
     }
   };
-  
+
+  /**
+   * ส่งคำตอบ
+   */
+  const submitAnswer = async (
+    sessionId: string,
+    questionId: number,
+    choiceId: number,
+    timeSpent: number
+  ): Promise<PlayerAnswer | null> => {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const response = await gameStore.submitAnswer(sessionId, questionId, choiceId, timeSpent);
+      
+      // ถ้าเชื่อมต่อ WebSocket อยู่ แจ้งให้ผู้เล่นคนอื่นรู้ด้วย
+      if (gameSocket.isConnected.value) {
+        gameSocket.submitAnswer(sessionId, questionId, choiceId, timeSpent);
+      }
+      
+      return response;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to submit answer';
+      toast.error(error.value);
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * จบเกม (สำหรับโฮสต์)
+   */
+  const endGame = async (sessionId: string): Promise<GameSession | null> => {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const session = await gameStore.endGameSession(sessionId);
+      
+      // ถ้าเชื่อมต่อ WebSocket อยู่ แจ้งให้ผู้เล่นคนอื่นรู้ด้วย
+      if (gameSocket.isConnected.value) {
+        gameSocket.endGame(sessionId);
+      }
+      
+      return session;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to end game';
+      toast.error(error.value);
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  /**
+   * ดึงผลลัพธ์ของเกม
+   */
+  const getGameResults = async (sessionId: string): Promise<GameSession | null> => {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const results = await gameStore.getGameResults(sessionId);
+      return results;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to get game results';
+      toast.error(error.value);
+      return null;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
+    isLoading,
+    error,
     createGame,
     joinGame,
     startGame,
-    // Return more methods as needed
+    submitAnswer,
+    endGame,
+    getGameResults
   };
-};
+}

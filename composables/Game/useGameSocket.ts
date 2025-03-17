@@ -1,233 +1,237 @@
-import { io, Socket } from 'socket.io-client';
-import { ref, onUnmounted, computed } from 'vue';
-import type { SocketMessage } from '~/types/Game/game.interface';
+import { defineStore } from 'pinia';
+import { gameAPI } from '~/api/Game/game.api';
+import type { GameSession, Player, PlayerAnswer } from '~/types/Game/game.interface';
 
-export const useGameSocket = () => {
-  // Remove /socket.io/ from the end of the URL and don't use 'ws://' protocol
-  const BASE_URL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-  
-  const socket = ref<Socket | null>(null);
-  const isConnected = ref(false);
-  const lastError = ref<string | null>(null);
-  const reconnectAttempts = ref(0);
-  const maxReconnectAttempts = 5;
-
-  // Computed value for UI
-  const connectionStatus = computed(() => {
-    if (isConnected.value) return 'connected';
-    if (reconnectAttempts.value > 0) return 'reconnecting';
-    return 'disconnected';
+export const useGameStore = defineStore('game', () => {
+  const state = reactive({
+    currentSession: null as GameSession | null,
+    player: null as Player | null,
+    loading: false,
+    error: null as string | null
   });
 
   /**
-   * Connect socket with better error handling
+   * สร้าง game session ใหม่
    */
-  const connect = () => {
-    if (!process.client) return;
+  const createGameSession = async (quizId: number): Promise<GameSession> => {
+    state.loading = true;
+    state.error = null;
     
-    if (!socket.value) {
-      console.log('Creating new Socket.IO connection to:', BASE_URL);
+    try {
+      const response = await gameAPI.createGameSession(quizId);
       
-      // Fix socket.io configuration:
-      // 1. Use polling first, then try websocket (more reliable)
-      // 2. Enable upgrade to allow changing transport methods
-      socket.value = io(BASE_URL, {
-        autoConnect: false,
-        withCredentials: true,
-        reconnection: true,
-        reconnectionAttempts: maxReconnectAttempts,
-        reconnectionDelay: 1000,
-        timeout: 10000,
-        transports: ['polling', 'websocket'], // Use polling first then websocket
-        upgrade: true, // Allow transport upgrade
-      });
-
-      // Setup event listeners with better logging
-      socket.value.on('connect', () => {
-        isConnected.value = true;
-        reconnectAttempts.value = 0;
-        lastError.value = null;
-        console.log('Socket connected successfully! Socket ID:', socket.value?.id);
-      });
-
-      socket.value.on('connect_error', (error) => {
-        console.error('Socket connection error:', error.message);
-        lastError.value = `Connection error: ${error.message}`;
-      });
-
-      socket.value.on('disconnect', (reason) => {
-        isConnected.value = false;
-        console.log('Socket disconnected. Reason:', reason);
-
-        if (reason === 'io server disconnect' || reason === 'transport close') {
-          console.log('Attempting to reconnect...');
-          setTimeout(() => {
-            if (!socket.value?.connected) {
-              connect();
-            }
-          }, 1000);
-        }
-      });
-
-      socket.value.on('error', (err: string) => {
-        lastError.value = err;
-        console.error('Socket error:', err);
-      });
-
-      socket.value.on('reconnect_attempt', (attempt) => {
-        reconnectAttempts.value = attempt;
-        console.log(`Reconnect attempt ${attempt}/${maxReconnectAttempts}`);
-      });
-
-      socket.value.on('reconnect_failed', () => {
-        console.error('Socket reconnection failed after max attempts');
-      });
-    }
-
-    if (!socket.value.connected) {
-      console.log('Attempting to connect socket...');
-      socket.value.connect();
-    }
-  };
-
-  // Rest of the code remains the same...
-  
-  /**
-   * Disconnect socket
-   */
-  const disconnect = () => {
-    if (socket.value) {
-      console.log('Manually disconnecting socket');
-      socket.value.disconnect();
-      isConnected.value = false;
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Invalid response from server');
+      }
+      
+      // Make sure session has Players array initialized
+      if (!response.session.Players) {
+        response.session.Players = [];
+      }
+      
+      state.currentSession = response.session;
+      return response.session;
+    } catch (error) {
+      console.error('Error in createGameSession:', error);
+      state.error = error instanceof Error ? error.message : 'Unknown error';
+      throw error;
+    } finally {
+      state.loading = false;
     }
   };
 
   /**
-   * Join game session with better error handling
+   * ดึงข้อมูล game session เฉพาะ
    */
-  const joinSession = (sessionId: string, userId: number, nickname: string) => {
-    console.log(`Attempting to join session: ${sessionId}, user: ${userId}, nickname: ${nickname}`);
+  const getGameSession = async (sessionId: string): Promise<GameSession> => {
+    state.loading = true;
+    state.error = null;
     
-    if (!isConnected.value) {
-      console.log('Socket not connected, connecting first...');
-      connect();
-    }
-    
-    if (socket.value && isConnected.value) {
-      console.log(`Emitting join_session event for session ${sessionId}`);
-      socket.value.emit('join_session', sessionId, userId, nickname);
-    } else {
-      console.error('Cannot join session: Socket not connected');
-      // Queue join for when socket connects
-      socket.value?.once('connect', () => {
-        console.log(`Socket connected, now joining session ${sessionId}`);
-        socket.value?.emit('join_session', sessionId, userId, nickname);
-      });
+    try {
+      const response = await gameAPI.getGameSession(sessionId);
+      
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Invalid response from server');
+      }
+      
+      // Make sure session has Players array initialized
+      if (!response.session.Players) {
+        response.session.Players = [];
+      }
+      
+      state.currentSession = response.session;
+      return response.session;
+    } catch (error) {
+      console.error('Error in getGameSession:', error);
+      state.error = error instanceof Error ? error.message : 'Unknown error';
+      throw error;
+    } finally {
+      state.loading = false;
     }
   };
 
-  const startGame = (sessionId: string, hostId: number) => {
-    if (!isConnected.value) {
-      connect();
-    }
+  /**
+   * เข้าร่วม game session
+   */
+  const joinGameSession = async (sessionId: string, nickname: string): Promise<Player> => {
+    state.loading = true;
+    state.error = null;
     
-    if (socket.value && isConnected.value) {
-      console.log(`Emitting start_game for session ${sessionId}`);
-      socket.value.emit('start_game', sessionId, hostId);
-    } else {
-      console.error('Cannot start game: Socket not connected');
+    try {
+      const response = await gameAPI.joinGameSession(sessionId, nickname);
+      
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Invalid response from server');
+      }
+      
+      state.player = response.player;
+      return response.player;
+    } catch (error) {
+      console.error('Error in joinGameSession:', error);
+      state.error = error instanceof Error ? error.message : 'Unknown error';
+      throw error;
+    } finally {
+      state.loading = false;
     }
   };
 
-  const submitAnswer = (
-    sessionId: string,
-    userId: number,
-    questionId: number,
-    choiceId: number,
+  /**
+   * เริ่ม game
+   */
+  const startGameSession = async (sessionId: string): Promise<GameSession> => {
+    state.loading = true;
+    state.error = null;
+    
+    try {
+      const response = await gameAPI.startGameSession(sessionId);
+      
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Invalid response from server');
+      }
+      
+      state.currentSession = response.session;
+      return response.session;
+    } catch (error) {
+      console.error('Error in startGameSession:', error);
+      state.error = error instanceof Error ? error.message : 'Unknown error';
+      throw error;
+    } finally {
+      state.loading = false;
+    }
+  };
+
+  /**
+   * ส่งคำตอบ
+   */
+  const submitAnswer = async (
+    sessionId: string, 
+    questionId: number, 
+    choiceId: number, 
     timeSpent: number
-  ) => {
-    if (!isConnected.value) {
-      connect();
-    }
+  ): Promise<PlayerAnswer> => {
+    state.loading = true;
+    state.error = null;
     
-    if (socket.value && isConnected.value) {
-      socket.value.emit('submit_answer', sessionId, userId, questionId, choiceId, timeSpent);
-    } else {
-      console.error('Cannot submit answer: Socket not connected');
+    try {
+      const response = await gameAPI.submitAnswer(
+        sessionId, 
+        questionId, 
+        choiceId, 
+        timeSpent
+      );
+      
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Invalid response from server');
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error in submitAnswer:', error);
+      state.error = error instanceof Error ? error.message : 'Unknown error';
+      throw error;
+    } finally {
+      state.loading = false;
     }
   };
 
-  const endGame = (sessionId: string, hostId: number) => {
-    if (!isConnected.value) {
-      connect();
-    }
+  /**
+   * จบเกม
+   */
+  const endGameSession = async (sessionId: string): Promise<GameSession> => {
+    state.loading = true;
+    state.error = null;
     
-    if (socket.value && isConnected.value) {
-      socket.value.emit('end_game', sessionId, hostId);
-    } else {
-      console.error('Cannot end game: Socket not connected');
+    try {
+      const response = await gameAPI.endGameSession(sessionId);
+      
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Invalid response from server');
+      }
+      
+      state.currentSession = response.session;
+      return response.session;
+    } catch (error) {
+      console.error('Error in endGameSession:', error);
+      state.error = error instanceof Error ? error.message : 'Unknown error';
+      throw error;
+    } finally {
+      state.loading = false;
     }
   };
 
-  const sendChatMessage = (sessionId: string, userId: number, message: string) => {
-    if (!isConnected.value) {
-      connect();
-    }
+  /**
+   * ดึงผลลัพธ์เกม
+   */
+  const getGameResults = async (sessionId: string): Promise<GameSession> => {
+    state.loading = true;
+    state.error = null;
     
-    if (socket.value && isConnected.value) {
-      socket.value.emit('chat_message', sessionId, userId, message);
-    } else {
-      console.error('Cannot send chat message: Socket not connected');
+    try {
+      const response = await gameAPI.getGameResults(sessionId);
+      
+      if (!response || !response.success) {
+        throw new Error(response?.message || 'Invalid response from server');
+      }
+      
+      state.currentSession = response.session;
+      return response.session;
+    } catch (error) {
+      console.error('Error in getGameResults:', error);
+      state.error = error instanceof Error ? error.message : 'Unknown error';
+      throw error;
+    } finally {
+      state.loading = false;
     }
   };
 
-  const onMessage = (callback: (message: SocketMessage) => void) => {
-    if (socket.value) {
-      socket.value.on('message', (messageStr: string) => {
-        try {
-          const message = JSON.parse(messageStr) as SocketMessage;
-          callback(message);
-        } catch (error) {
-          console.error('Error parsing socket message:', error, messageStr);
-        }
-      });
-    }
+  /**
+   * รีเซ็ตข้อมูลเกม
+   */
+  const resetGame = () => {
+    state.currentSession = null;
+    state.player = null;
+    state.error = null;
   };
 
-  const on = (event: string, callback: (...args: any[]) => void) => {
-    if (socket.value) {
-      socket.value.on(event, callback);
-    }
-  };
-
-  const off = (event: string, callback?: (...args: any[]) => void) => {
-    if (socket.value) {
-      socket.value.off(event, callback);
-    }
-  };
-
-  // Clean up on component unmount
-  onUnmounted(() => {
-    console.log('Component unmounted, disconnecting socket');
-    disconnect();
-  });
-
+  // Return the store's public API
   return {
-    socket,
-    isConnected,
-    lastError,
-    connectionStatus,
-    reconnectAttempts,
-    connect,
-    disconnect,
-    joinSession,
-    startGame,
+    // State
+    state,
+    
+    // Getters (computed values for convenience)
+    loading: computed(() => state.loading),
+    currentSession: computed(() => state.currentSession),
+    player: computed(() => state.player),
+    error: computed(() => state.error),
+    
+    // Actions/Methods
+    createGameSession,
+    getGameSession,
+    joinGameSession,
+    startGameSession,
     submitAnswer,
-    endGame,
-    sendChatMessage,
-    onMessage,
-    on,
-    off
+    endGameSession,
+    getGameResults,
+    resetGame
   };
-}
+});
