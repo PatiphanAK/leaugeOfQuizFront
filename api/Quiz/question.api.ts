@@ -5,7 +5,7 @@ const BASE_URL = process.env.NUXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'
 
 export default function QuestionAPI() {
   const api = axios.create({
-    baseURL: `${BASE_URL}/api/v1`, // Added /api/v1 prefix
+    baseURL: `${BASE_URL}/api/v1`,
     withCredentials: true,
     headers: {
       'Accept': 'application/json',
@@ -15,19 +15,14 @@ export default function QuestionAPI() {
   return {
     CreateQuestion: async (quizId: number, data: CreateUpdateQuestionData | FormData) => {
       try {
-        // If data is not FormData, convert it
         let formData: FormData;
         if (!(data instanceof FormData)) {
           formData = new FormData();
           formData.append('quizId', quizId.toString());
           formData.append('text', data.Text);
-          
-          // Add image if it exists and is a File
           if (data.ImageURL instanceof File) {
             formData.append('image', data.ImageURL);
           }
-          
-          // Note: The backend code doesn't show handling choices directly in this endpoint
         } else {
           formData = data;
         }
@@ -45,7 +40,6 @@ export default function QuestionAPI() {
     
     UpdateQuestion: async (id: number, data: CreateUpdateQuestionData | FormData) => {
       try {
-        // If data is not FormData, convert it
         let formData: FormData;
         let quizId: number;
         
@@ -53,14 +47,11 @@ export default function QuestionAPI() {
           formData = new FormData();
           formData.append('text', data.Text);
           quizId = data.QuizID;
-          
-          // Add image if it exists and is a File
           if (data.ImageURL instanceof File) {
             formData.append('image', data.ImageURL);
           }
         } else {
           formData = data;
-          // We need to extract quizId from FormData if it's already FormData
           const quizIdValue = formData.get('quizId');
           quizId = quizIdValue ? parseInt(quizIdValue.toString()) : 0;
         }

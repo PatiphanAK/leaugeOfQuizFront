@@ -138,7 +138,7 @@
         <div class="flex justify-end gap-4 pt-4 border-t border-gray-200">
           <button
             type="button"
-            @click="cancel"
+            @click="goBack"
             class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
           >
             Cancel
@@ -188,38 +188,34 @@ const quizData = ref<CreateUpdateQuizData>({
   ImageURL: ''
 });
 
-// Handle file upload for quiz image
+
 const handleQuizImageChange = (event: Event) => {
   const input = event.target as HTMLInputElement;
   if (input.files && input.files.length > 0) {
     const file = input.files[0];
-    quizData.value.ImageURL = file; // Store the file object directly
+    quizData.value.ImageURL = file;
   }
 };
 
-// Computed property for image preview
+
 const imagePreview = computed(() => {
   if (!quizData.value.ImageURL) return "";
   if (typeof quizData.value.ImageURL === "string") {
     return quizData.value.ImageURL;
   }
-  // Handle File object
   return URL.createObjectURL(quizData.value.ImageURL as File);
 });
 
-// Initialize quiz data by fetching categories and quiz details if in edit mode
 async function initializeQuizData() {
   isLoading.value = true;
   error.value = '';
   
   try {
-    // Fetch categories
     const categoriesResponse = await quiz.fetchCategories();
     if (categoriesResponse) {
       categories.value = categoriesResponse;
     }
     
-    // If in edit mode, fetch the quiz data
     if (isEditMode.value && route.params.id) {
       const quizId = Number(route.params.id);
       if (!isNaN(quizId)) {
@@ -250,7 +246,6 @@ async function initializeQuizData() {
   }
 } 
 
-// Validate form before submission
 const validateForm = () => {
   let isValid = true;
   error.value = '';
@@ -266,7 +261,7 @@ const validateForm = () => {
   return isValid;
 };
 
-// Submit form handler
+
 const submitForm = async () => {
   if (!validateForm()) return;
   
@@ -286,7 +281,6 @@ const submitForm = async () => {
     };
     
     if (isEditMode.value && route.params.id) {
-      // Update existing quiz
       const quizId = Number(route.params.id);
       if (!isNaN(quizId)) {
         await quiz.updateQuiz(quizId, quizDataForAPI);
@@ -294,12 +288,9 @@ const submitForm = async () => {
         throw new Error('Invalid quiz ID');
       }
     } else {
-      // Create new quiz
       await quiz.createQuiz(quizDataForAPI);
     }
-    
-    // Redirect back after successful submission
-    cancel();
+    goBack();
   } catch (err) {
     console.error('Error saving quiz:', err);
     error.value = 'Failed to save quiz. Please try again.';
@@ -308,12 +299,10 @@ const submitForm = async () => {
   }
 };
 
-// Cancel form and go back
-const cancel = () => {
+const goBack = () => {
   router.back();
 };
 
-// Call initializeQuizData when component is mounted
 onMounted(() => {
   initializeQuizData();
 });

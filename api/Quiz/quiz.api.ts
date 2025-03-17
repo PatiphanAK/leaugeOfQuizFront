@@ -83,8 +83,6 @@ export default function QuizAPI() {
         };
       }
     },
-
-    // Fetch quiz by ID
     fetchQuizById: async (id: number): Promise<Quiz | null> => {
       try {
         const response = await api.get(`/api/v1/quizzes/${id}`);
@@ -94,8 +92,6 @@ export default function QuizAPI() {
         return null;
       }
     },
-
-    // Fetch user's quizzes
     fetchMyQuizzes: async (params?: QuizParams): Promise<PaginationResult<Quiz>> => {
       try {
         const queryParams = params ? buildQueryParams(params) : {};

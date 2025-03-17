@@ -4,10 +4,9 @@ import { computed, ref } from 'vue';
 import { NuxtLink } from '#components';
 import { useRoute } from 'vue-router';
 import helper from '~/utils/helper';
-import { useGame } from '~/composables/Game/useGame';
+
 
 const route = useRoute();
-const { createGame } = useGame();
 const isCreating = ref(false);
 
 const props = defineProps<{

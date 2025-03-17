@@ -5,18 +5,13 @@ import { useAuth } from '~/composables/Auth/useAuth';
 import LoginButton from '~/components/Base/LoginButton.vue';
 import ProfileMenu from '~/components/Base/ProfileMenu.vue';
 
-// State management
 const authStore = useAuthStore();
 const { loginWithGoogle, logout } = useAuth();
-
-// Auth state - using the property names from your original navbar
 const user = computed(() => authStore.userProfile || authStore.state?.user);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
-
-// Menu states
 const isMobileMenuOpen = ref(false);
 
-// Navigation items
+
 const navItems = [
   { path: '/home', label: 'Home' },
   { path: '/about', label: 'About us' },
@@ -25,7 +20,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard' },
 ];
 
-// Calculate active class for navigation items
+
 const isActiveRoute = (path) => {
   const route = useRoute();
   return route.path === path;
@@ -42,47 +37,30 @@ const handleLogout = async () => {
   }
 };
 
-// Format user data to ensure it has all properties ProfileMenu expects
 const formattedUser = computed(() => {
   if (!user.value) return null;
   
   return {
-    // Use existing properties or provide fallbacks
     displayName: user.value.username || user.value.displayName || 'User',
     email: user.value.email || '',
     pictureURL: user.value.avatar || user.value.pictureURL || user.value.photoURL || '',
-    // Include original properties
     ...user.value
   };
 });
 
-// Determine if we're in development mode
-// For Nuxt, use import.meta.dev or config instead of process.env
 const isDevelopment = ref(false);
 
-// Lifecycle hooks
+
 onMounted(() => {
-  // In Nuxt 3, you can use import.meta.dev instead of process.env
-  // But we'll make a simple check against the hostname to be safe
   isDevelopment.value = window.location.hostname === 'localhost' || 
                         window.location.hostname === '127.0.0.1';
-  
-  // Check login status when component loads
   if (!authStore.isLoading && !isAuthenticated.value) {
-    // Use fetchUser if it exists, otherwise fall back to loadUser
     if (typeof authStore.fetchUser === 'function') {
       authStore.fetchUser();
     } else if (typeof authStore.loadUser === 'function') {
       authStore.loadUser();
     }
   }
-  
-  // Log the current auth state for debugging
-  console.log("Auth state:", {
-    isAuthenticated: isAuthenticated.value,
-    user: user.value,
-    authStoreMethods: Object.keys(authStore)
-  });
 });
 </script>
 
