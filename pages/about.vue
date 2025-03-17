@@ -123,7 +123,6 @@
               
               <h3 class="text-lg font-semibold text-gray-700 mb-2">สิ่งที่ต้องติดตั้งก่อน</h3>
               <ol class="list-decimal list-inside mb-6 text-gray-700 space-y-1 pl-4">
-                <li>ติดตั้ง <span class="font-semibold">Node.js</span> (สำหรับ Nuxt3 frontend)</li>
                 <li>ติดตั้ง <span class="font-semibold">Go</span> (สำหรับ GoFiber backend)</li>
                 <li>ติดตั้ง <span class="font-semibold">Bun</span> (สำหรับการจัดการ dependency ของ frontend ที่เร็วขึ้น)</li>
               </ol>

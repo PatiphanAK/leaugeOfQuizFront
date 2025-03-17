@@ -4,10 +4,15 @@ import { computed, ref } from 'vue';
 import { NuxtLink } from '#components';
 import { useRoute } from 'vue-router';
 import helper from '~/utils/helper';
-
+import { useAuthStore } from '~/stores/Auth/useAuthStore';
+import { storeToRefs } from 'pinia';
+import { gameAPI, wsApi } from '~/api/Game/game.api';
 
 const route = useRoute();
 const isCreating = ref(false);
+const authStore = useAuthStore();
+const { userProfile } = storeToRefs(authStore);
+const creationError = ref('');
 
 const props = defineProps<{
   quiz: Quiz
@@ -28,13 +33,62 @@ const imageUrl = computed(() => {
 
 // สร้างเกมใหม่และนำทางไปยังหน้าเกม
 const handleCreateGame = async () => {
+  if (!userProfile.value) {
+    // ถ้าผู้ใช้ยังไม่ได้ล็อกอิน ให้นำทางไปหน้าล็อกอิน
+    alert('กรุณาล็อกอินก่อนสร้างห้องเกม');
+    navigateTo('/login');
+    return;
+  }
+  
   try {
     isCreating.value = true;
-    const session = await createGame(props.quiz.ID);
-    // Navigate to the game session page using the session ID
-    navigateTo(`/game/sessions/${session.ID}`);
+    creationError.value = '';
+    
+    console.log('Creating game session for quiz ID:', props.quiz.ID);
+    
+    // 1. สร้างเซสชันเกมใหม่ผ่าน API โดยระบุให้ส่ง credentials ด้วย
+    const session = await gameAPI.createGameSession(props.quiz.ID);
+    
+    console.log('Game session created:', session);
+    
+    // ตรวจสอบว่า session มีค่า ID (ตัวพิมพ์ใหญ่) ที่ถูกต้องหรือไม่
+    if (!session || !session.ID) {
+      throw new Error('ไม่สามารถสร้างห้องเกมได้: ไม่ได้รับรหัสห้องเกม');
+    }
+    
+    // 2. เชื่อมต่อกับ WebSocket server ถ้ายังไม่ได้เชื่อมต่อ
+    if (!wsApi.isConnected.value) {
+      console.log('Connecting to WebSocket server...');
+      await wsApi.connect();
+      console.log('WebSocket connected:', wsApi.isConnected.value);
+    }
+    
+    // 3. เข้าร่วมเกมในฐานะผู้สร้าง (host)
+    const joinPayload = {
+      sessionId: session.ID, // ใช้ ID (ตัวพิมพ์ใหญ่) แทน id (ตัวพิมพ์เล็ก)
+      userId: userProfile.value.id,
+      nickname: userProfile.value.displayName || userProfile.value.username || 'Host'
+    };
+    
+    console.log('Joining session with payload:', joinPayload);
+    
+    const joinResult = wsApi.joinSession(joinPayload);
+    console.log('Join session result:', joinResult);
+    
+    // เปิดหน้าเกมเซสชันในแท็บเดียวกัน
+    setTimeout(() => {
+      console.log('Opening game session in current tab:', session.ID);
+      window.location.href = `/game/sessions/${session.ID}`;
+      
+      // หรือถ้าต้องการเปิดในแท็บใหม่
+      // window.open(`/game/sessions/${session.ID}`, '_blank');
+    }, 1000);
+    
   } catch (error) {
     console.error('Failed to create game:', error);
+    creationError.value = 'ไม่สามารถสร้างห้องเกมได้ โปรดลองอีกครั้ง';
+    // แสดงข้อความแจ้งเตือนผู้ใช้
+    alert('ไม่สามารถสร้างห้องเกมได้ โปรดลองอีกครั้ง: ' + (error instanceof Error ? error.message : String(error)));
   } finally {
     isCreating.value = false;
   }
@@ -62,6 +116,10 @@ const handleCreateGame = async () => {
       <p class="mb-3 text-sm text-gray-700 dark:text-gray-400 flex-grow">
         {{ truncatedDescription }}
       </p>
+      
+      <div v-if="creationError" class="mb-2 text-xs text-red-500">
+        {{ creationError }}
+      </div>
       
       <div class="mt-auto flex items-center justify-between">
         <div class="text-xs text-gray-500 dark:text-gray-400">

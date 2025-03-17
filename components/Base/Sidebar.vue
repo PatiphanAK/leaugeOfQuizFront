@@ -1,10 +1,16 @@
 <script setup>
+import { useAuth } from '~/composables/Auth/useAuth';
+import { useAuthStore } from '~/stores/Auth/useAuthStore';
+
 const props = defineProps({
   isOpen: {
     type: Boolean,
     default: false
   }
 });
+
+const authStore = useAuthStore();
+const { logout } = useAuth();
 
 const sidebarItems = [
   {
@@ -39,11 +45,31 @@ const sidebarItems = [
   }
 ];
 
+const logoutItem = {
+  name: 'ออกจากระบบ',
+  svg: '<svg class="w-6 h-6 text-red-600 dark:text-red-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12h-9.5m7.5 3l3-3-3-3m-5-2V5a1 1 0 00-1-1H5a1 1 0 00-1 1v14a1 1 0 001 1h6a1 1 0 001-1v-3"/></svg>',
+  path: null,
+  badge: null,
+  isLogout: true
+};
+
 const emit = defineEmits(['close-mobile-menu']);
 
 const closeSidebarOnMobile = () => {
   if (window.innerWidth < 768) {
     emit('close-mobile-menu');
+  }
+};
+
+const handleLogout = async () => {
+  try {
+    await logout();
+    authStore.clearUser();
+    closeSidebarOnMobile();
+    navigateTo('/home');
+  } catch (error) {
+    console.error("Logout failed:", error);
+    navigateTo('/home');
   }
 };
 </script>
@@ -58,7 +84,7 @@ const closeSidebarOnMobile = () => {
     ]" 
     aria-label="Sidebar"
   >
-    <div class="h-full px-3 py-4 overflow-y-auto">
+    <div class="h-full px-3 py-4 overflow-y-auto flex flex-col">
       <!-- Sidebar Header -->
       <div class="flex justify-between items-center mb-5 px-1">
         <h2 
@@ -112,19 +138,31 @@ const closeSidebarOnMobile = () => {
         </li>
       </ul>
       
-      <!-- Tooltip Explanations (Only visible when sidebar is collapsed) -->
-      <!-- <div class="hidden md:block text-center mt-4" :class="{'hidden': isOpen}">
-        <div class="text-xs text-gray-500 dark:text-gray-400 px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 mb-2">
-          <span class="block">Click icons</span>
-          <span class="block">for navigation</span>
-        </div>
-        <button 
-          @click="emit('close-mobile-menu')" 
-          class="mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+      <!-- Spacer to push logout to bottom -->
+      <div class="flex-grow"></div>
+      
+      <!-- Logout Item (separated from main menu) -->
+      <div class="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          @click="handleLogout"
+          class="w-full flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 group"
+          :class="{'justify-start': isOpen, 'justify-center md:justify-start': !isOpen}"
         >
-          Expand
+          <!-- Icon -->
+          <span 
+            v-html="logoutItem.svg"
+            :class="{'flex-shrink-0': isOpen, 'mx-auto md:mx-0': !isOpen}"
+          ></span>
+          
+          <!-- Text -->
+          <span 
+            class="ml-3 whitespace-nowrap transition-all duration-300 text-red-600 dark:text-red-400 font-medium" 
+            :class="{'opacity-100': isOpen, 'opacity-0 w-0 md:opacity-0 md:w-0 hidden md:block': !isOpen}"
+          >
+            {{ logoutItem.name }}
+          </span>
         </button>
-      </div> -->
+      </div>
     </div>
   </aside>
 </template>

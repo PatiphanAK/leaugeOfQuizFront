@@ -1,133 +1,109 @@
-export interface GameSession {
-  id: string;
-  quizId: number;
-  hostId: number;
-  status: GameStatus;
-  startedAt?: string;
-  finishedAt?: string;
-  createdAt: string;
-  quiz?: Quiz;
-  Players?: Player[];
-  ID?: string;
+// types/Game/game.interface.ts
+
+export type GameStatus = 'lobby' | 'starting' | 'in_progress' | 'ended';
+
+export interface User {
+  ID: number;
+  GoogleID: string;
+  Email: string;
+  DisplayName: string;
+  PictureURL?: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  DeletedAt?: string;
 }
 
-export type GameStatus = 'lobby' | 'in_progress' | 'completed';
-
 export interface Quiz {
-  id: number;
-  title: string;
-  description: string;
-  ownerId: number;
-  categoryId?: number;
-  coverImage?: string;
-  createdAt: string;
-  updatedAt: string;
-  questions?: Question[];
+  ID: number;
+  Title: string;
+  Description: string;
+  TimeLimit: number;
+  IsPublished: boolean;
+  ImageURL?: string;
+  CreatorID: number;
+  CreatedAt: string;
+  UpdatedAt: string;
+  Questions?: Question[];
+  Categories?: Category[];
+}
+
+export interface Category {
+  ID: number;
+  Name: string;
 }
 
 export interface Question {
-  id: number;
-  quizId: number;
-  text: string;
-  image?: string;
-  timeLimit?: number; // เวลาในการตอบคำถาม (วินาที)
-  createdAt: string;
-  updatedAt: string;
-  choices?: Choice[];
+  ID: number;
+  QuizID: number;
+  Text: string;
+  ImageURL?: string;
+  Choices?: Choice[];
 }
 
 export interface Choice {
-  id: number;
-  questionId: number;
-  text: string;
-  isCorrect: boolean;
-  image?: string;
-  createdAt: string;
-  updatedAt: string;
+  ID: number;
+  QuestionID: number;
+  Text: string;
+  IsCorrect: boolean;
+  ImageURL?: string;
 }
 
-export interface Player {
-  id: number;
-  sessionId: string;
-  userId: number;
-  nickname: string;
-  score: number;
-  joinedAt: string;
-  user?: {
-    id: number;
-    username: string;
-    avatar?: string;
-    displayName?: string;
-  };
+export interface GameSession {
+  ID: string;
+  QuizID: number;
+  HostID: number;
+  Status: GameStatus;
+  CurrentQuestionIndex?: number;
+  StartedAt?: string;
+  FinishedAt?: string;
+  CreatedAt: string;
+  Quiz?: Quiz;
+  Host?: User;
+  Players?: GamePlayer[];
+}
+
+export interface GamePlayer {
+  ID: number;
+  SessionID: string;
+  UserID: number;
+  Nickname: string;
+  Score: number;
+  User?: User;
 }
 
 export interface PlayerAnswer {
-  id: number;
-  sessionId: string;
-  quizId: number;
-  questionId: number;
-  playerId: number;
-  choiceId: number;
-  timeSpent: number; // เวลาที่ใช้ในการตอบคำถาม (วินาที)
-  isCorrect: boolean;
-  points: number; // คะแนนที่ได้จากการตอบคำถามนี้
-  createdAt: string;
+  ID: number;
+  SessionID: string;
+  PlayerID: number;
+  QuestionID: number;
+  ChoiceID: number;
+  IsCorrect: boolean;
+  TimeSpent: number;
+  Score: number;
 }
 
-export interface ChatMessage {
-  userID: number;
-  message: string;
-  timestamp?: string;
-}
-
-export interface SocketMessage {
-  type: string;
-  payload: any;
-}
-
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  session?: GameSession;
-  player?: Player;
-  players?: Player[];
-}
-
-export interface GameSessionCreate {
-  quizId: number;
-}
-
-export interface GameSessionJoin {
+// WebSocket messages และ payload
+export interface JoinSessionPayload {
+  sessionId: string; // ยังใช้ตัวพิมพ์เล็กตามข้อตกลงใน WebSocket API
+  userId: number;
   nickname: string;
 }
 
-export interface AnswerSubmit {
+export interface GameActionPayload {
+  sessionId: string;
+  userId: number;
+}
+
+export interface SubmitAnswerPayload {
+  sessionId: string;
+  userId: number;
   questionId: number;
   choiceId: number;
   timeSpent: number;
 }
 
-export type GameEvent = 
-  | 'player_joined'
-  | 'game_started'
-  | 'question_started'
-  | 'answer_submitted'
-  | 'question_ended'
-  | 'game_ended'
-  | 'chat_message';
-
-// ข้อมูลสถานะเกมสำหรับแสดงในหน้าแดชบอร์ด
-export interface GameStats {
-  totalPlayers: number;
-  averageScore: number;
-  highestScore: {
-    player: Player;
-    score: number;
-  };
-  questionStats: {
-    questionId: number;
-    correctPercentage: number;
-    averageTime: number;
-  }[];
+export interface ChatMessagePayload {
+  sessionId: string;
+  userId: number;
+  message: string;
 }
